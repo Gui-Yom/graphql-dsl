@@ -1,6 +1,7 @@
 package marais.graphql.dsl
 
 import graphql.GraphQL
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.SchemaPrinter
 import marais.graphql.generator.SchemaGenerator
 import java.net.URL
@@ -30,7 +31,7 @@ class TestDsl {
                 field(MyData::dec)
                 field(MyData::field)
                 // Can be a custom function
-                field("inc") {
+                field("inc") { it: DataFetchingEnvironment ->
                     field + 1
                 }
             }
@@ -40,15 +41,15 @@ class TestDsl {
 
                 derive()
 
-                field1("custom") { param: String ->
+                field("custom") { param: String ->
                     param
                 }
 
-                field2("custom2") { a: Int, b: Int ->
+                field("custom2") { a: Int, b: Int ->
                     a * b
                 }
 
-                field3("custom3") { a: Int, b: Float, c: String ->
+                field("custom3") { a: Int, b: Float, c: String ->
                     "$c: ${a * b}"
                 }
             }
@@ -82,7 +83,7 @@ class TestDsl {
             """
             query {
               data { id, field, dec, inc },
-              otherdata { id, field },
+              otherdata { id, field, custom(param: "hello") },
               node { id, 
                 ... on MyData { value: field },
                 ... on OtherData { url: field }

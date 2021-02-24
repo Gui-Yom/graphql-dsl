@@ -1,11 +1,13 @@
 package marais.graphql.dsl
 
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.valueParameters
 
 sealed class Field<O>(val name: String, val description: String? = null) {
@@ -18,6 +20,20 @@ sealed class Field<O>(val name: String, val description: String? = null) {
 data class Argument(val name: String, val type: KType) {
 
     constructor(param: KParameter) : this(param.name!!, param.type)
+
+    companion object {
+        val envType = DataFetchingEnvironment::class.createType()
+    }
+
+    fun <T> resolve(env: DataFetchingEnvironment): T {
+        return if (type == envType) {
+            env as T
+        } else {
+            env.getArgument(name)
+        }
+    }
+
+    fun isSpecialType() = type == envType
 }
 
 class CustomField<O>(
@@ -40,14 +56,27 @@ class PropertyField<R, O>(val property: KProperty1<R, O>, name: String? = null, 
 class FunctionField<R, O>(val func: KFunction<O>, name: String? = null, description: String? = null) :
     Field<O>(name ?: func.name, description) {
 
-    override val dataFetcher: DataFetcher<O> = DataFetcher { func.call(it.getSource()) }
     override val outputType: KType = func.returnType
     override val arguments: MutableList<Argument> = mutableListOf()
 
+    // Might include special types that should not appear on the schema
+    val funcArgs = mutableListOf<Argument>()
+
     init {
-        arguments.addAll(func.valueParameters.map {
-            println("Got param : $it")
-            Argument(it)
-        })
+        for (it in func.valueParameters) {
+            val arg = Argument(it)
+            funcArgs += arg
+            if (!arg.isSpecialType())
+                arguments += arg
+        }
+    }
+
+    override val dataFetcher: DataFetcher<O> = DataFetcher { env ->
+        func.call(
+            env.getSource(),
+            *funcArgs.map {
+                it.resolve<Any>(env)
+            }.toTypedArray()
+        )
     }
 }
