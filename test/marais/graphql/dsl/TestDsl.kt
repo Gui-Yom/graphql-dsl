@@ -39,6 +39,18 @@ class TestDsl {
                 inter<Node>()
 
                 derive()
+
+                field1("custom") { param: String ->
+                    param
+                }
+
+                field2("custom2") { a: Int, b: Int ->
+                    a * b
+                }
+
+                field3("custom3") { a: Int, b: Float, c: String ->
+                    "$c: ${a * b}"
+                }
             }
 
             query {

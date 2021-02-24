@@ -13,7 +13,7 @@ class QueryBuilder : Type<Query>("Query") {
         noinline resolver: (DataFetchingEnvironment) -> O
     ) {
         // lmao
-        fields += CustomField(name, description, resolver.reflect()!!.returnType, resolver)
+        fields += CustomField(name, description, resolver.reflect()!!.returnType, listOf(), resolver)
     }
 }
 
@@ -27,7 +27,7 @@ class MutationBuilder : Type<Mutation>("Mutation") {
         noinline resolver: (DataFetchingEnvironment) -> O
     ) {
         // lmao
-        fields += CustomField(name, description, resolver.reflect()!!.returnType, resolver)
+        fields += CustomField(name, description, resolver.reflect()!!.returnType, listOf(), resolver)
     }
 }
 
@@ -41,6 +41,6 @@ class SubscriptionBuilder : Type<Subscription>("Subscription") {
         noinline resolver: (DataFetchingEnvironment) -> O
     ) {
         // lmao
-        fields += CustomField(name, description, resolver.reflect()!!.returnType, resolver)
+        fields += CustomField(name, description, resolver.reflect()!!.returnType, listOf(), resolver)
     }
 }

@@ -1,7 +1,10 @@
 # graphql-dsl
 
-Goal: build your graphql schema with a nice dsl, be the poweruser and control everything that gets generated, does
-nothing under the hood by default, no (or minimal) runtime reflection (excluding schema building)
+Goal: build a graphql schema with a nice dsl, be the poweruser and control everything that gets generated, does nothing
+under the hood by default, no (or minimal) runtime reflection (excluding schema building)
+
+Stretch goal : Compile time schema building instead of runtime. Or at least a way to cook generated schema once at first
+runtime then include it at the next compilation.
 
 ## Roadmap
 
@@ -10,8 +13,7 @@ nothing under the hood by default, no (or minimal) runtime reflection (excluding
 - [x] Interfaces (not as type checked as I would)
 - [ ] Field arguments
 - [ ] Input objects
-- [ ] Subscription type check
-- [ ] Suspend fetchers
+- [ ] Special types (CompletableFuture and Publisher)
+- [ ] Suspend and Flow support
 - [ ] Union types
-- [ ] Automatic registration with reflection
-- [ ] More type checking using reflection
+- [ ] Complete type checking using reflection

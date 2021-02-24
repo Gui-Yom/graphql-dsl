@@ -21,12 +21,12 @@ data class Argument(val name: String, val type: KType) {
 }
 
 class CustomField<O>(
-    name: String, description: String? = null,
+    name: String,
+    description: String? = null,
     override val outputType: KType,
+    override val arguments: List<Argument> = emptyList(),
     override val dataFetcher: DataFetcher<O>
-) : Field<O>(name, description) {
-    override val arguments: List<Argument> = emptyList()
-}
+) : Field<O>(name, description)
 
 class PropertyField<R, O>(val property: KProperty1<R, O>, name: String? = null, description: String? = null) :
     Field<O>(name ?: property.name, description) {

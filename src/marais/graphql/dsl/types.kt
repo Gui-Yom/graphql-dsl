@@ -2,6 +2,7 @@ package marais.graphql.dsl
 
 import graphql.schema.DataFetchingEnvironment
 import kotlin.reflect.*
+import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 
 abstract class Type<R>(val name: String) {
@@ -136,6 +137,57 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
             if (it is FunctionField<*, *>) {
                 it.func == this
             } else false
+        }
+    }
+
+    fun <O, A> field1(
+        name: String,
+        description: String? = null,
+        resolver: R.(A) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val arg0 = Argument(reflected.valueParameters[0])
+        fields += CustomField(name, description, reflected.returnType, listOf(arg0)) {
+            resolver(
+                it.getSource(),
+                it.getArgument(arg0.name)
+            )
+        }
+    }
+
+    fun <O, A, B> field2(
+        name: String,
+        description: String? = null,
+        resolver: R.(A, B) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val arg0 = Argument(reflected.valueParameters[0])
+        val arg1 = Argument(reflected.valueParameters[1])
+        fields += CustomField(name, description, reflected.returnType, listOf(arg0, arg1)) {
+            resolver(
+                it.getSource(),
+                it.getArgument(arg0.name),
+                it.getArgument(arg1.name)
+            )
+        }
+    }
+
+    fun <O, A, B, C> field3(
+        name: String,
+        description: String? = null,
+        resolver: R.(A, B, C) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val arg0 = Argument(reflected.valueParameters[0])
+        val arg1 = Argument(reflected.valueParameters[1])
+        val arg2 = Argument(reflected.valueParameters[2])
+        fields += CustomField(name, description, reflected.returnType, listOf(arg0, arg1, arg2)) {
+            resolver(
+                it.getSource(),
+                it.getArgument(arg0.name),
+                it.getArgument(arg1.name),
+                it.getArgument(arg2.name)
+            )
         }
     }
 }
