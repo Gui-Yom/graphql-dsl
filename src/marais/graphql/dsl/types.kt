@@ -160,6 +160,81 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
             )
         }
     }
+
+    @SchemaDsl
+    fun <O, A, B, C, D> field(
+        name: String,
+        description: String? = null,
+        resolver: R.(A, B, C, D) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val args = mutableListOf<Argument>()
+        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
+        fields += CustomField(name, description, reflected.returnType, args) {
+            resolver(
+                it.getSource(),
+                arg0.resolve(it),
+                arg1.resolve(it),
+                arg2.resolve(it),
+                arg3.resolve(it)
+            )
+        }
+    }
+
+    @SchemaDsl
+    fun <O, A, B, C, D, E> field(
+        name: String,
+        description: String? = null,
+        resolver: R.(A, B, C, D, E) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val args = mutableListOf<Argument>()
+        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
+        val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
+        fields += CustomField(name, description, reflected.returnType, args) {
+            resolver(
+                it.getSource(),
+                arg0.resolve(it),
+                arg1.resolve(it),
+                arg2.resolve(it),
+                arg3.resolve(it),
+                arg4.resolve(it)
+            )
+        }
+    }
+
+    @SchemaDsl
+    fun <O, A, B, C, D, E, F> field(
+        name: String,
+        description: String? = null,
+        resolver: R.(A, B, C, D, E, F) -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        val args = mutableListOf<Argument>()
+        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
+        val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
+        val arg5 = Argument(reflected.valueParameters[5]).also { if (!it.isSpecialType()) args += it }
+        fields += CustomField(name, description, reflected.returnType, args) {
+            resolver(
+                it.getSource(),
+                arg0.resolve(it),
+                arg1.resolve(it),
+                arg2.resolve(it),
+                arg3.resolve(it),
+                arg4.resolve(it),
+                arg5.resolve(it)
+            )
+        }
+    }
 }
 
 class OperationBuilder<R : Any>(name: String, val instance: R) : Type<R>(name) {
