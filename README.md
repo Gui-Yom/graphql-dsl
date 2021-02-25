@@ -11,9 +11,10 @@ runtime then include it at the next compilation.
 - [x] Basic types + fields
 - [x] Scalars
 - [x] Interfaces (not as type checked as I would)
-- [ ] Field arguments
+- [x] Field arguments
 - [ ] Input objects
 - [ ] Special types (CompletableFuture and Publisher)
 - [ ] Suspend and Flow support
 - [ ] Union types
 - [ ] Complete type checking using reflection
+- [ ] Directive support

@@ -19,11 +19,12 @@ class SchemaBuilder {
     // Maps a kotlin type to a graphql type declaration
     val types = mutableMapOf<KType, TypeBuilder<*>>()
 
-    lateinit var query: QueryBuilder
-    var mutation: MutationBuilder? = null
-    var subscription: SubscriptionBuilder? = null
+    lateinit var query: OperationBuilder<*>
+    var mutation: OperationBuilder<*>? = null
+    var subscription: OperationBuilder<*>? = null
 
     @ExperimentalStdlibApi
+    @SchemaDsl
     inline fun <reified T> scalar(
         name: String,
         coercing: Coercing<T, String>,
@@ -35,6 +36,7 @@ class SchemaBuilder {
     }
 
     @ExperimentalStdlibApi
+    @SchemaDsl
     inline fun <reified T : Any> inter(
         name: String? = null,
         configure: InterfaceBuilder<T>.() -> Unit = {}
@@ -45,6 +47,7 @@ class SchemaBuilder {
     }
 
     @ExperimentalStdlibApi
+    @SchemaDsl
     inline fun <reified T : Any> type(
         name: String? = null,
         configure: TypeBuilder<T>.() -> Unit = {}
@@ -54,16 +57,19 @@ class SchemaBuilder {
         return type
     }
 
-    fun query(configure: QueryBuilder.() -> Unit) {
-        query = QueryBuilder().apply(configure)
+    @SchemaDsl
+    fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit) {
+        this.query = OperationBuilder("Query", query).apply(configure)
     }
 
-    fun mutation(configure: MutationBuilder.() -> Unit) {
-        mutation = MutationBuilder().apply(configure)
+    @SchemaDsl
+    fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit) {
+        this.query = OperationBuilder("Mutation", query).apply(configure)
     }
 
-    fun subscription(configure: SubscriptionBuilder.() -> Unit) {
-        subscription = SubscriptionBuilder().apply(configure)
+    @SchemaDsl
+    fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit) {
+        this.query = OperationBuilder("Subscription", query).apply(configure)
     }
 }
 

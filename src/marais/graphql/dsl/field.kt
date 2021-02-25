@@ -1,5 +1,6 @@
 package marais.graphql.dsl
 
+import graphql.TrivialDataFetcher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -44,17 +45,27 @@ class CustomField<O>(
     override val dataFetcher: DataFetcher<O>
 ) : Field<O>(name, description)
 
-class PropertyField<R, O>(val property: KProperty1<R, O>, name: String? = null, description: String? = null) :
-    Field<O>(name ?: property.name, description) {
+class PropertyField<R, O>(
+    val property: KProperty1<R, O>,
+    name: String? = null,
+    description: String? = null,
+    instance: R? = null
+) : Field<O>(name ?: property.name, description) {
 
-    override val dataFetcher: DataFetcher<O> = PropertyDataFetcher.fetching(property.getter)
+    override val dataFetcher: DataFetcher<O> =
+        instance?.let { TrivialDataFetcher { property.getter(instance) } }
+            ?: PropertyDataFetcher.fetching(property.getter)
     override val outputType: KType = property.returnType
     override val arguments: List<Argument> = emptyList()
 }
 
 // FIXME is it currently impossible to specify the receiver for the KFunction ?
-class FunctionField<R, O>(val func: KFunction<O>, name: String? = null, description: String? = null) :
-    Field<O>(name ?: func.name, description) {
+class FunctionField<R, O>(
+    val func: KFunction<O>,
+    name: String? = null,
+    description: String? = null,
+    instance: R? = null
+) : Field<O>(name ?: func.name, description) {
 
     override val outputType: KType = func.returnType
     override val arguments: MutableList<Argument> = mutableListOf()
@@ -73,7 +84,7 @@ class FunctionField<R, O>(val func: KFunction<O>, name: String? = null, descript
 
     override val dataFetcher: DataFetcher<O> = DataFetcher { env ->
         func.call(
-            env.getSource(),
+            instance ?: env.getSource(),
             *funcArgs.map {
                 it.resolve<Any>(env)
             }.toTypedArray()

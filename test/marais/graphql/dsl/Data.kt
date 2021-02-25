@@ -5,6 +5,7 @@ import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import java.net.URL
+import kotlin.random.Random
 
 abstract class Node(val id: String)
 
@@ -34,4 +35,15 @@ object UrlCoercing : Coercing<URL, String> {
     } catch (e: Exception) {
         throw CoercingParseLiteralException(e)
     }
+}
+
+object Query {
+    val data = MyData("69420", 42)
+    val otherdata = OtherData("42069", URL("http://localhost:8080"))
+
+    fun node() = if (Random.nextBoolean()) data else otherdata
+
+    fun data() = data
+
+    fun otherdata() = otherdata
 }

@@ -4,9 +4,8 @@ import graphql.GraphQL
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.SchemaPrinter
 import marais.graphql.generator.SchemaGenerator
-import java.net.URL
-import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 class TestDsl {
     @ExperimentalStdlibApi
@@ -54,22 +53,7 @@ class TestDsl {
                 }
             }
 
-            query {
-                val data = MyData("69420", 42)
-                val otherdata = OtherData("42069", URL("http://localhost:8080"))
-
-                field("data") {
-                    data
-                }
-
-                field("node") {
-                    if (Random.nextBoolean()) data else otherdata
-                }
-
-                field("otherdata") {
-                    otherdata
-                }
-            }
+            query(Query) { derive() }
         }
         val initTime = System.currentTimeMillis() - startTime
         val schema = builder.build()
@@ -92,7 +76,7 @@ class TestDsl {
             """.trimIndent()
         )
         println(result.getData<Map<String, Any?>>())
-        println(result.errors)
+        assertTrue(result.errors.isEmpty(), "${result.errors}")
         println(result.extensions)
     }
 }
