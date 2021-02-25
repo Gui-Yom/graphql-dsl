@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm")
-    //kotlin("plugin.serialization")
     `maven-publish`
 }
 
@@ -11,10 +10,10 @@ repositories {
 }
 
 val kotlinVersion: String by project
-val ktxSerializationVersion: String by project
 val ktxCoroutinesVersion: String by project
 val slf4jVersion: String by project
 val gqlVersion: String by project
+val junitVersion: String by project
 
 dependencies {
     // Kotlin
@@ -28,14 +27,11 @@ dependencies {
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
-    // Serialization
-    //implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$ktxSerializationVersion")
-
     // GraphQL
     implementation("com.graphql-java:graphql-java:$gqlVersion")
 
     testImplementation(kotlin("test-junit5"))
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
 }
 
 sourceSets {
