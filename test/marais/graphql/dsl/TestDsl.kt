@@ -63,18 +63,19 @@ class TestDsl {
         println(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
 
         val graphql = GraphQL.newGraphQL(schema).build()
-        val result = graphql.execute(
-            """
+        val result = graphql.execute("""
             query {
               data { id, field, dec, inc },
               otherdata { id, field, custom(param: "hello") },
               node { id, 
                 ... on MyData { value: field },
                 ... on OtherData { url: field }
-              } 
+              },
+              testSuspend,
+              testDeferred,
+              testFuture
             }
-            """.trimIndent()
-        )
+        """.trimIndent())
         println(result.getData<Map<String, Any?>>())
         assertTrue(result.errors.isEmpty(), "${result.errors}")
         println(result.extensions)

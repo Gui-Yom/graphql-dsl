@@ -13,8 +13,9 @@ runtime then include it at the next compilation.
 - [x] Interfaces (not as type checked as I would)
 - [x] Field arguments
 - [ ] Input objects
-- [ ] Special types (CompletableFuture and Publisher)
-- [ ] Suspend and Flow support
+- [ ] Enums
+- [x] Special types (CompletableFuture and Publisher)
+- [x] Suspend and Flow support
 - [ ] Union types
 - [ ] Complete type checking using reflection
 - [ ] Directive support

@@ -23,10 +23,10 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             // Probably unnecessary to put scalars since they don't reference anything else and they're mapped first
             names[it.type] = it.name
             it.type to GraphQLScalarType.newScalar()
-                .name(it.name)
-                .coercing(it.coercing)
-                .apply(it.builder)
-                .build()
+                    .name(it.name)
+                    .coercing(it.coercing)
+                    .apply(it.builder)
+                    .build()
         }
 
         println("Registered scalars : $scalars")
@@ -51,9 +51,9 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             }
 
             ktype to GraphQLInterfaceType.newInterface()
-                .name(inter.name)
-                .fields(fields)
-                .build()
+                    .name(inter.name)
+                    .fields(fields)
+                    .build()
         }
 
         println("Registered interfaces : $interfaces")
@@ -71,14 +71,14 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         val subscription = schemaBuilder.subscription?.let { makeOperation(it) }
 
         return GraphQLSchema.newSchema()
-            .additionalTypes(scalars.values.toSet())
-            .additionalTypes(interfaces.values.toSet())
-            .additionalTypes(types.values.toSet())
-            .query(query)
-            .mutation(mutation)
-            .subscription(subscription)
-            .codeRegistry(codeRegistry.build())
-            .build()
+                .additionalTypes(scalars.values.toSet())
+                .additionalTypes(interfaces.values.toSet())
+                .additionalTypes(types.values.toSet())
+                .query(query)
+                .mutation(mutation)
+                .subscription(subscription)
+                .codeRegistry(codeRegistry.build())
+                .build()
     }
 
     private fun resolveOutputType(type: KType): GraphQLOutputType {
@@ -94,11 +94,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-            ?: scalars[nonNullType] ?: interfaces[nonNullType] ?: types[nonNullType]
-            // Fallback to late binding if possible
-            ?: names[nonNullType]?.let { GraphQLTypeReference(it) }
-            // We won't ever see it
-            ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
+                ?: scalars[nonNullType] ?: interfaces[nonNullType] ?: types[nonNullType]
+                // Fallback to late binding if possible
+                ?: names[nonNullType]?.let { GraphQLTypeReference(it) }
+                // We won't ever see it
+                ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
@@ -118,10 +118,10 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-            ?: scalars[nonNullType]
-            // TODO search through input objects too
-            // We won't ever see it
-            ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
+                ?: scalars[nonNullType]
+                // TODO search through input objects too
+                // We won't ever see it
+                ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
@@ -129,23 +129,23 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             GraphQLNonNull.nonNull(resolved)
     }
 
-    private fun makeField(field: Field<*>, parentType: String): GraphQLFieldDefinition? {
+    private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition? {
         // Register the field data fetcher
         codeRegistry.dataFetcher(FieldCoordinates.coordinates(parentType, field.name), field.dataFetcher)
 
         return GraphQLFieldDefinition.newFieldDefinition()
-            .name(field.name)
-            .description(field.description)
-            .arguments(field.arguments.map(this::makeArgument))
-            .type(resolveOutputType(field.outputType))
-            .build()
+                .name(field.name)
+                .description(field.description)
+                .arguments(field.arguments.map(this::makeArgument))
+                .type(resolveOutputType(field.outputType))
+                .build()
     }
 
     fun makeArgument(argument: Argument): GraphQLArgument {
         return GraphQLArgument.newArgument()
-            .name(argument.name)
-            .type(resolveInputType(argument.type))
-            .build()
+                .name(argument.name)
+                .type(resolveInputType(argument.type))
+                .build()
     }
 
     private fun makeObject(type: TypeBuilder<*>): GraphQLObjectType {
@@ -154,10 +154,10 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         }
 
         return GraphQLObjectType.newObject()
-            .name(type.name)
-            .fields(fields)
-            .withInterfaces(*type.interfaces.map { interfaces[it] }.toTypedArray())
-            .build()
+                .name(type.name)
+                .fields(fields)
+                .withInterfaces(*type.interfaces.map { interfaces[it] }.toTypedArray())
+                .build()
     }
 
     private fun makeOperation(operation: Type<*>): GraphQLObjectType {
@@ -166,8 +166,8 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         }
 
         return GraphQLObjectType.newObject()
-            .name(operation.name)
-            .fields(fields)
-            .build()
+                .name(operation.name)
+                .fields(fields)
+                .build()
     }
 }

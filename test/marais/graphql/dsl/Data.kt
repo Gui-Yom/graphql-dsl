@@ -4,7 +4,10 @@ import graphql.language.StringValue
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import java.net.URL
+import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
 
 abstract class Node(val id: String)
@@ -24,11 +27,11 @@ object UrlCoercing : Coercing<URL, String> {
     }
 
     override fun parseValue(input: Any): URL =
-        if (input is StringValue) try {
-            URL(input.value)
-        } catch (e: Exception) {
-            throw CoercingParseValueException(e)
-        } else throw CoercingParseValueException("Expected a StringValue for Url")
+            if (input is StringValue) try {
+                URL(input.value)
+            } catch (e: Exception) {
+                throw CoercingParseValueException(e)
+            } else throw CoercingParseValueException("Expected a StringValue for Url")
 
     override fun parseLiteral(input: Any): URL = try {
         URL(input as String)
@@ -46,4 +49,10 @@ object Query {
     fun data() = data
 
     fun otherdata() = otherdata
+
+    suspend fun testSuspend() = 42
+
+    fun testFuture(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
+
+    fun testDeferred(): Deferred<Int> = CompletableDeferred(42)
 }

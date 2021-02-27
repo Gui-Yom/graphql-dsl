@@ -11,6 +11,7 @@ repositories {
 
 val kotlinVersion: String by project
 val ktxCoroutinesVersion: String by project
+val reactiveStreamsVersion: String by project
 val slf4jVersion: String by project
 val gqlVersion: String by project
 val junitVersion: String by project
@@ -23,6 +24,10 @@ dependencies {
 
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
+
+    implementation("org.reactivestreams:reactive-streams:$reactiveStreamsVersion")
 
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
