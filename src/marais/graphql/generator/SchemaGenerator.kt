@@ -3,6 +3,7 @@ package marais.graphql.generator
 import graphql.Scalars
 import graphql.schema.*
 import marais.graphql.dsl.*
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.withNullability
 
@@ -14,6 +15,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
     // Maps kotlin types to graphql types
     private val scalars = mutableMapOf<KType, GraphQLScalarType>()
+    private val enums = mutableMapOf<KType, GraphQLEnumType>()
     private val interfaces = mutableMapOf<KType, GraphQLInterfaceType>()
     private val types = mutableMapOf<KType, GraphQLObjectType>()
     private val codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
@@ -30,6 +32,20 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         }
 
         println("Registered scalars : $scalars")
+
+        enums += schemaBuilder.enums.map {
+            names[it.type] = it.name
+            it.type to GraphQLEnumType.newEnum()
+                    .name(it.name)
+                    .apply {
+                        for (enumConstant: Enum<*> in (it.type.classifier!! as KClass<*>).java.enumConstants as Array<Enum<*>>) {
+                            value(enumConstant.name)
+                        }
+                    }
+                    .build()
+        }
+
+        println("Registered enums : $enums")
 
         // Early name registration
         schemaBuilder.interfaces.forEach { (ktype, inter) ->
@@ -72,6 +88,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
         return GraphQLSchema.newSchema()
                 .additionalTypes(scalars.values.toSet())
+                .additionalTypes(enums.values.toSet())
                 .additionalTypes(interfaces.values.toSet())
                 .additionalTypes(types.values.toSet())
                 .query(query)
@@ -94,7 +111,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-                ?: scalars[nonNullType] ?: interfaces[nonNullType] ?: types[nonNullType]
+                ?: scalars[nonNullType] ?: enums[nonNullType] ?: interfaces[nonNullType] ?: types[nonNullType]
                 // Fallback to late binding if possible
                 ?: names[nonNullType]?.let { GraphQLTypeReference(it) }
                 // We won't ever see it
@@ -118,7 +135,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-                ?: scalars[nonNullType]
+                ?: scalars[nonNullType] ?: enums[nonNullType]
                 // TODO search through input objects too
                 // We won't ever see it
                 ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")

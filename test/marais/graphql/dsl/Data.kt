@@ -40,6 +40,12 @@ object UrlCoercing : Coercing<URL, String> {
     }
 }
 
+enum class MyEnum {
+    VALUE0,
+    VALUE1,
+    VALUE2
+}
+
 object Query {
     val data = MyData("69420", 42)
     val otherdata = OtherData("42069", URL("http://localhost:8080"))

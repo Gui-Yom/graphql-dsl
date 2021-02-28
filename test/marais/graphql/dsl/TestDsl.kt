@@ -16,6 +16,8 @@ class TestDsl {
 
             scalar("Url", UrlCoercing)
 
+            enum<MyEnum>()
+
             inter<Node> {
                 derive()
             }

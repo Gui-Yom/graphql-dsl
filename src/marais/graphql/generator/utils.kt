@@ -38,3 +38,5 @@ fun KType.isValidContainer(): Boolean {
 fun KType.unwrap(): KType = arguments[0].type!!
 
 fun KType.representationType(): KType = if (isValidContainer()) unwrap() else this
+
+fun KType.name(): String = (classifier!! as KClass<*>).simpleName!!
