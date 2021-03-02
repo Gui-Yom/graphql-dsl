@@ -18,6 +18,8 @@ class TestDsl {
 
             enum<MyEnum>()
 
+            input<Input>()
+
             inter<Node> {
                 derive()
             }

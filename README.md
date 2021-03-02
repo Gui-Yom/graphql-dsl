@@ -46,6 +46,8 @@ enum class MyEnum {
     VALUE2
 }
 
+data class Input(val a: String)
+
 object Query {
     val data = MyData("69420", 42)
     val otherdata = OtherData("42069", URL("http://localhost:8080"))
@@ -63,6 +65,9 @@ val schema = SchemaGenerator {
 
     // Define an enum directly based on its values
     enum<MyEnum>()
+
+    // Define an input type
+    input<Input>()
 
     // Define an interface backed by a kotlin interface / abstract class / sealed class
     inter<Node> {
@@ -115,7 +120,7 @@ val schema = SchemaGenerator {
 - [x] Scalars
 - [x] Interfaces (not as type checked as I would)
 - [x] Field arguments
-- [ ] Input objects
+- [x] Input objects
 - [x] Enums
 - [x] Special types (CompletableFuture and Publisher)
 - [x] Suspend and Flow support

@@ -2,10 +2,8 @@ package marais.graphql.dsl
 
 import graphql.schema.Coercing
 import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
-import kotlin.reflect.KClass
-import kotlin.reflect.full.companionObject
-import kotlin.reflect.full.declaredMembers
 
 @DslMarker
 annotation class SchemaDsl
@@ -13,17 +11,17 @@ annotation class SchemaDsl
 @SchemaDsl
 class SchemaBuilder {
 
-    val scalars = mutableListOf<Scalar<*>>()
-    val enums = mutableSetOf<Enum>()
-
-    // Maps a kotlin type to a graphql interface declaration
-    val interfaces = mutableMapOf<KClass<*>, InterfaceBuilder<*>>()
-
-    // Maps a kotlin type to a graphql type declaration
-    val types = mutableMapOf<KClass<*>, TypeBuilder<*>>()
+    val scalars = mutableListOf<Scalar>()
+    val enums = mutableListOf<Enum>()
 
     // Maps a kotlin type to a graphql input type declaration
-    val inputs = mutableMapOf<KClass<*>, Input>()
+    val inputs = mutableListOf<Input>()
+
+    // Maps a kotlin type to a graphql interface declaration
+    val interfaces = mutableListOf<InterfaceBuilder<*>>()
+
+    // Maps a kotlin type to a graphql type declaration
+    val types = mutableListOf<TypeBuilder<*>>()
 
     lateinit var query: OperationBuilder<*>
     var mutation: OperationBuilder<*>? = null
@@ -35,8 +33,7 @@ class SchemaBuilder {
             coercing: Coercing<T, String>,
             noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        val scalar = Scalar(name, T::class, coercing, builder)
-        scalars += scalar
+        scalars += Scalar(name, T::class, coercing, builder)
     }
 
     @SchemaDsl
@@ -45,8 +42,16 @@ class SchemaBuilder {
             noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        val enum = Enum(name ?: kclass.simpleName!!, kclass, builder)
-        enums += enum
+        enums += Enum(name ?: kclass.simpleName!!, kclass, builder)
+    }
+
+    @SchemaDsl
+    inline fun <reified T> input(
+            name: String? = null,
+            noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
+    ) {
+        val kclass = T::class
+        inputs += Input(name ?: kclass.simpleName!!, kclass, builder)
     }
 
     @SchemaDsl
@@ -55,8 +60,7 @@ class SchemaBuilder {
             configure: InterfaceBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        val inter = InterfaceBuilder(kclass, name).apply(configure)
-        interfaces[kclass] = inter
+        interfaces += InterfaceBuilder(kclass, name).apply(configure)
     }
 
     @SchemaDsl
@@ -65,8 +69,7 @@ class SchemaBuilder {
             configure: TypeBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        val type = TypeBuilder(kclass, name).apply(configure)
-        types[kclass] = type
+        types += TypeBuilder(kclass, name).apply(configure)
     }
 
     @SchemaDsl
@@ -84,16 +87,3 @@ class SchemaBuilder {
         this.query = OperationBuilder("Subscription", query).apply(configure)
     }
 }
-
-data class Scalar<T : Any>(
-        val name: String,
-        val kclass: KClass<T>,
-        val coercing: Coercing<T, *>,
-        val builder: GraphQLScalarType.Builder.() -> Unit
-)
-
-data class Enum(
-        val name: String,
-        val kclass: KClass<*>,
-        val builder: GraphQLEnumType.Builder.() -> Unit
-)

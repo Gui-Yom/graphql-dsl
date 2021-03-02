@@ -13,9 +13,12 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     // A kotlin class to its mapped graphql type
     private val names = mutableMapOf<KClass<*>, String>()
 
+    private val inputNames = mutableMapOf<KClass<*>, String>()
+
     // Maps kotlin types to graphql types
     private val scalars = mutableMapOf<KClass<*>, GraphQLScalarType>()
     private val enums = mutableMapOf<KClass<*>, GraphQLEnumType>()
+    private val inputs = mutableMapOf<KClass<*>, GraphQLInputObjectType>()
     private val interfaces = mutableMapOf<KClass<*>, GraphQLInterfaceType>()
     private val types = mutableMapOf<KClass<*>, GraphQLObjectType>()
     private val codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
@@ -48,16 +51,33 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         println("Registered enums : $enums")
 
         // Early name registration
-        schemaBuilder.interfaces.forEach { (ktype, inter) ->
-            names[ktype] = inter.name
+        schemaBuilder.inputs.forEach {
+            inputNames[it.kclass] = it.name
+        }
+
+        inputs += schemaBuilder.inputs.map {
+            it.kclass to GraphQLInputObjectType.newInputObject()
+                    .name(it.name)
+                    .fields(it.fields.map { (name, type) ->
+                        GraphQLInputObjectField.newInputObjectField()
+                                .name(name)
+                                .type(resolveInputType(type))
+                                .build()
+                    })
+                    .build()
+        }
+
+        // Early name registration
+        schemaBuilder.interfaces.forEach {
+            names[it.kclass] = it.name
         }
         // Early name registration
-        schemaBuilder.types.forEach { (ktype, type) ->
-            names[ktype] = type.name
+        schemaBuilder.types.forEach {
+            names[it.kclass] = it.name
         }
 
         // Interfaces
-        interfaces += schemaBuilder.interfaces.map { (ktype, inter) ->
+        interfaces += schemaBuilder.interfaces.map { inter ->
             val fields = inter.fields.map { field ->
                 makeField(field, inter.name)
             }
@@ -66,7 +86,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
                 env.schema.getObjectType(names[names.keys.find { it == env.getObject<Any?>()::class }])
             }
 
-            ktype to GraphQLInterfaceType.newInterface()
+            inter.kclass to GraphQLInterfaceType.newInterface()
                     .name(inter.name)
                     .fields(fields)
                     .build()
@@ -75,9 +95,9 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         println("Registered interfaces : $interfaces")
 
         // Any other types
-        types += schemaBuilder.types.map { (ktype, type) ->
-            names[ktype] = type.name
-            ktype to makeObject(type)
+        types += schemaBuilder.types.map {
+            names[it.kclass] = it.name
+            it.kclass to makeObject(it)
         }
 
         println("Registered types : $types")
@@ -89,6 +109,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         return GraphQLSchema.newSchema()
                 .additionalTypes(scalars.values.toSet())
                 .additionalTypes(enums.values.toSet())
+                .additionalTypes(inputs.values.toSet())
                 .additionalTypes(interfaces.values.toSet())
                 .additionalTypes(types.values.toSet())
                 .query(query)
@@ -137,7 +158,8 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         }
         // Try to search through what has already been mapped
                 ?: scalars[kclass] ?: enums[kclass]
-                // TODO search through input objects too
+                // Fallback to late binding if possible
+                ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
                 // We won't ever see it
                 ?: throw Exception("Can't resolve $type to a valid graphql type")
 
