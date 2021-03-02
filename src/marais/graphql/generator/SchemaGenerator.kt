@@ -5,26 +5,26 @@ import graphql.schema.*
 import marais.graphql.dsl.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.withNullability
 
 class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
     private val schemaBuilder = SchemaBuilder().apply(configure)
 
-    private val names = mutableMapOf<KType, String>()
+    // A kotlin class to its mapped graphql type
+    private val names = mutableMapOf<KClass<*>, String>()
 
     // Maps kotlin types to graphql types
-    private val scalars = mutableMapOf<KType, GraphQLScalarType>()
-    private val enums = mutableMapOf<KType, GraphQLEnumType>()
-    private val interfaces = mutableMapOf<KType, GraphQLInterfaceType>()
-    private val types = mutableMapOf<KType, GraphQLObjectType>()
+    private val scalars = mutableMapOf<KClass<*>, GraphQLScalarType>()
+    private val enums = mutableMapOf<KClass<*>, GraphQLEnumType>()
+    private val interfaces = mutableMapOf<KClass<*>, GraphQLInterfaceType>()
+    private val types = mutableMapOf<KClass<*>, GraphQLObjectType>()
     private val codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
 
     fun build(): GraphQLSchema? {
         scalars += schemaBuilder.scalars.map {
             // Probably unnecessary to put scalars since they don't reference anything else and they're mapped first
-            names[it.type] = it.name
-            it.type to GraphQLScalarType.newScalar()
+            names[it.kclass] = it.name
+            it.kclass to GraphQLScalarType.newScalar()
                     .name(it.name)
                     .coercing(it.coercing)
                     .apply(it.builder)
@@ -34,11 +34,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         println("Registered scalars : $scalars")
 
         enums += schemaBuilder.enums.map {
-            names[it.type] = it.name
-            it.type to GraphQLEnumType.newEnum()
+            names[it.kclass] = it.name
+            it.kclass to GraphQLEnumType.newEnum()
                     .name(it.name)
                     .apply {
-                        for (enumConstant: Enum<*> in (it.type.classifier!! as KClass<*>).java.enumConstants as Array<Enum<*>>) {
+                        for (enumConstant: Enum<*> in it.kclass.java.enumConstants as Array<Enum<*>>) {
                             value(enumConstant.name)
                         }
                     }
@@ -63,7 +63,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             }
 
             codeRegistry.typeResolver(inter.name) { env ->
-                env.schema.getObjectType(names[names.keys.find { it.classifier == env.getObject<Any?>()::class }])
+                env.schema.getObjectType(names[names.keys.find { it == env.getObject<Any?>()::class }])
             }
 
             ktype to GraphQLInterfaceType.newInterface()
@@ -100,9 +100,9 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
     private fun resolveOutputType(type: KType): GraphQLOutputType {
 
-        val nonNullType = type.withNullability(false)
+        val kclass = type.classifier as KClass<*>
         // Try standard types
-        val resolved = when (type.classifier!!) {
+        val resolved = when (kclass) {
             Int::class -> Scalars.GraphQLInt
             Float::class -> Scalars.GraphQLFloat
             Double::class -> Scalars.GraphQLFloat
@@ -111,11 +111,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-                ?: scalars[nonNullType] ?: enums[nonNullType] ?: interfaces[nonNullType] ?: types[nonNullType]
+                ?: scalars[kclass] ?: enums[kclass] ?: interfaces[kclass] ?: types[kclass]
                 // Fallback to late binding if possible
-                ?: names[nonNullType]?.let { GraphQLTypeReference(it) }
+                ?: names[kclass]?.let { GraphQLTypeReference(it) }
                 // We won't ever see it
-                ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
+                ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
@@ -124,9 +124,10 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     }
 
     private fun resolveInputType(type: KType): GraphQLInputType {
-        val nonNullType = type.withNullability(false)
+
+        val kclass = type.classifier as KClass<*>
         // Try standard types
-        val resolved = when (type.classifier!!) {
+        val resolved = when (kclass) {
             Int::class -> Scalars.GraphQLInt
             Float::class -> Scalars.GraphQLFloat
             Double::class -> Scalars.GraphQLFloat
@@ -135,10 +136,10 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-                ?: scalars[nonNullType] ?: enums[nonNullType]
+                ?: scalars[kclass] ?: enums[kclass]
                 // TODO search through input objects too
                 // We won't ever see it
-                ?: throw Exception("Can't resolve $nonNullType to a valid graphql type")
+                ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved

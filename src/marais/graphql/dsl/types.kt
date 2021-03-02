@@ -2,9 +2,14 @@ package marais.graphql.dsl
 
 import graphql.schema.StaticDataFetcher
 import marais.graphql.generator.*
-import kotlin.reflect.*
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KProperty1
+import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
+import kotlin.reflect.typeOf
 
 @SchemaDsl
 sealed class Type<R : Any>(val name: String) {
@@ -50,18 +55,22 @@ sealed class Type<R : Any>(val name: String) {
     }
 
     internal fun derive(kclass: KClass<R>, instance: R?) {
-        for (member in kclass.members) {
-            when (member) {
-                is KProperty1<*, *> -> {
-                    println("found property : $member")
-                    fields += PropertyField(member as KProperty1<R, *>, instance = instance)
-                }
-                is KFunction<*> -> {
-                    if (isValidFunctionDerive(member.name)) {
-                        println("found function : $member")
-                        fields += FunctionField(member, instance = instance)
-                    }
-                }
+        deriveProperties(kclass, instance)
+        deriveFunctions(kclass, instance)
+    }
+
+    internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
+        for (member in kclass.memberProperties) {
+            println("found property : $member")
+            fields += PropertyField(member, instance = instance)
+        }
+    }
+
+    internal fun deriveFunctions(kclass: KClass<R>, instance: R?) {
+        for (member in kclass.memberFunctions) {
+            if (isValidFunctionDerive(member.name)) {
+                println("found function : $member")
+                fields += FunctionField(member, instance = instance)
             }
         }
     }
@@ -79,7 +88,7 @@ class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null) : T
 
 class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name ?: kclass.simpleName!!) {
 
-    val interfaces = mutableListOf<KType>()
+    val interfaces = mutableListOf<KClass<*>>()
 
     @SchemaDsl
     fun derive() {
@@ -89,11 +98,10 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         super.derive(kclass, null)
     }
 
-    @ExperimentalStdlibApi
     @SchemaDsl
     inline fun <reified I : Any> inter() {
-        val ktype = typeOf<I>()
-        interfaces += ktype
+        // TODO check R : I
+        interfaces += I::class
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
@@ -248,7 +256,7 @@ class OperationBuilder<R : Any>(name: String, val instance: R) : Type<R>(name) {
     @SchemaDsl
     fun derive() {
 
-        val kclass = instance!!::class
+        val kclass = instance::class
 
         require(isValidClassForType(kclass))
 
