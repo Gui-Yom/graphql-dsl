@@ -15,6 +15,7 @@ class TestDsl {
         val builder = SchemaGenerator {
 
             scalar("Url", UrlCoercing)
+            id<MyId>()
 
             enum<MyEnum>()
 
@@ -52,7 +53,7 @@ class TestDsl {
                     a.map { it * b }
                 }
 
-                field("custom3") { a: Int, b: Float, c: String ->
+                field("custom3") { a: Int, b: Float, c: MyId ->
                     "$c: ${a * b}"
                 }
             }

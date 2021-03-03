@@ -123,23 +123,17 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     private fun resolveOutputType(type: KType): GraphQLOutputType {
 
         val kclass = type.classifier as KClass<*>
-        // Try standard types
+
         val resolved = if (kclass.isSubclassOf(List::class)) {
             GraphQLList.list(resolveOutputType(type.arguments[0].type!!))
-        } else null ?: when (kclass) {
-            Int::class -> Scalars.GraphQLInt
-            Float::class -> Scalars.GraphQLFloat
-            Double::class -> Scalars.GraphQLFloat
-            String::class -> Scalars.GraphQLString
-            Boolean::class -> Scalars.GraphQLBoolean
-            else -> null
-        }
-        // Try to search through what has already been mapped
-        ?: scalars[kclass] ?: enums[kclass] ?: interfaces[kclass] ?: types[kclass]
-        // Fallback to late binding if possible
-        ?: names[kclass]?.let { GraphQLTypeReference(it) }
-        // We won't ever see it
-        ?: throw Exception("Can't resolve $type to a valid graphql type")
+        } else null
+            ?: resolveInOutType(kclass) as? GraphQLOutputType
+            // Search through what has already been resolved
+            ?: interfaces[kclass] ?: types[kclass]
+            // Fallback to late binding if possible
+            ?: names[kclass]?.let { GraphQLTypeReference(it) }
+            // We won't ever see it
+            ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
@@ -151,28 +145,33 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
         val kclass = type.classifier as KClass<*>
 
-        // Try standard types
         val resolved = if (kclass.isSubclassOf(List::class)) {
             GraphQLList.list(resolveInputType(type.arguments[0].type!!))
-        } else null ?: when (kclass) {
-            Int::class -> Scalars.GraphQLInt
-            Float::class -> Scalars.GraphQLFloat
-            Double::class -> Scalars.GraphQLFloat
-            String::class -> Scalars.GraphQLString
-            Boolean::class -> Scalars.GraphQLBoolean
-            else -> null
-        }
-        // Try to search through what has already been mapped
-        ?: scalars[kclass] ?: enums[kclass]
-        // Fallback to late binding if possible
-        ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
-        // We won't ever see it
-        ?: throw Exception("Can't resolve $type to a valid graphql type")
+        } else null
+            ?: resolveInOutType(kclass) as? GraphQLInputType
+            // Search through what has already been resolved
+            ?: inputs[kclass]
+            // Fallback to late binding if possible
+            ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
+            // We won't ever see it
+            ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
         } else
             GraphQLNonNull.nonNull(resolved)
+    }
+
+    private fun resolveInOutType(kclass: KClass<*>): GraphQLType? {
+        return when (kclass) {
+            Int::class -> Scalars.GraphQLInt
+            Float::class -> Scalars.GraphQLFloat
+            Double::class -> Scalars.GraphQLFloat
+            String::class -> Scalars.GraphQLString
+            Boolean::class -> Scalars.GraphQLBoolean
+            in schemaBuilder.idTypes -> Scalars.GraphQLID
+            else -> null
+        } ?: scalars[kclass] ?: enums[kclass]
     }
 
     private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition? {
@@ -187,7 +186,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             .build()
     }
 
-    fun makeArgument(argument: Argument): GraphQLArgument {
+    private fun makeArgument(argument: Argument): GraphQLArgument {
         return GraphQLArgument.newArgument()
             .name(argument.name)
             .type(resolveInputType(argument.type))

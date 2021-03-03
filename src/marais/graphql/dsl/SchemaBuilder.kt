@@ -4,6 +4,7 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
+import kotlin.reflect.KClass
 
 @DslMarker
 annotation class SchemaDsl
@@ -11,6 +12,7 @@ annotation class SchemaDsl
 @SchemaDsl
 class SchemaBuilder {
 
+    val idTypes = mutableSetOf<KClass<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
     val enums = mutableListOf<EnumBuilder>()
 
@@ -34,6 +36,11 @@ class SchemaBuilder {
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
         scalars += ScalarBuilder(name, T::class, coercing, builder)
+    }
+
+    @SchemaDsl
+    inline fun <reified T : Any> id() {
+        idTypes += T::class
     }
 
     @SchemaDsl

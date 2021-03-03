@@ -48,6 +48,8 @@ enum class MyEnum {
 
 data class Input(val a: String)
 
+data class MyId(val inner: String)
+
 object Query {
     val data = MyData("69420", 42)
     val otherdata = OtherData("42069", URL("http://localhost:8080"))
