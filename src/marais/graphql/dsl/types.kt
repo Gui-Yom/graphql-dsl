@@ -39,17 +39,25 @@ sealed class Type<R : Any>(val name: String) {
     }
 
     operator fun KProperty1<R, *>.unaryMinus() {
+        exclude(this)
+    }
+
+    operator fun KFunction<*>.unaryMinus() {
+        exclude(this)
+    }
+
+    fun exclude(prop: KProperty1<R, *>) {
         fields.removeIf {
             if (it is PropertyField<*>) {
-                it.property == this
+                it.property == prop
             } else false
         }
     }
 
-    operator fun KFunction<*>.unaryMinus() {
+    fun exclude(func: KFunction<*>) {
         fields.removeIf {
             if (it is FunctionField<*>) {
-                it.func == this
+                it.func == func
             } else false
         }
     }
@@ -105,6 +113,25 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
+
+    @SchemaDsl
+    fun <O> field(
+        name: String,
+        description: String? = null,
+        resolver: R.() -> O
+    ) {
+        val reflected = resolver.reflect()!!
+        fields += CustomField(
+            name,
+            description,
+            if (reflected.returnType.isValidContainer()) reflected.returnType.unwrap() else reflected.returnType,
+            emptyList()
+        ) {
+            resolver(
+                it.getSource()
+            )
+        }
+    }
 
     // TODO Maybe inlining could be better to obtain the type of A
     // We need to reflect the lambda anyway to get param names
