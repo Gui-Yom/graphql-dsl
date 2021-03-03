@@ -86,11 +86,11 @@ class SchemaBuilder {
 
     @SchemaDsl
     fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.query = OperationBuilder("Mutation", query).apply(configure)
+        this.mutation = OperationBuilder("Mutation", query).apply(configure)
     }
 
     @SchemaDsl
     fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.query = OperationBuilder("Subscription", query).apply(configure)
+        this.subscription = OperationBuilder("Subscription", query).apply(configure)
     }
 }
