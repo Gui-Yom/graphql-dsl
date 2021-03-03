@@ -48,8 +48,8 @@ class TestDsl {
                     param
                 }
 
-                field("custom2") { a: Int, b: Int ->
-                    a * b
+                field("custom2") { a: List<Int>, b: Int ->
+                    a.map { it * b }
                 }
 
                 field("custom3") { a: Int, b: Float, c: String ->
@@ -69,9 +69,20 @@ class TestDsl {
         val graphql = GraphQL.newGraphQL(schema).build()
         val result = graphql.execute("""
             query {
-              data { id, field, dec, inc },
-              otherdata { id, field, custom(param: "hello") },
-              node { id, 
+              data {
+                id,
+                field,
+                dec,
+                inc
+              },
+              otherdata {
+                id,
+                field,
+                custom(param: "hello"),
+                custom2(a: [1, 2, 3], b: 4)
+              },
+              node {
+                id, 
                 ... on MyData { value: field },
                 ... on OtherData { url: field }
               },

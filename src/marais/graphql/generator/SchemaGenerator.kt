@@ -5,6 +5,7 @@ import graphql.schema.*
 import marais.graphql.dsl.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.isSubclassOf
 
 class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
@@ -123,7 +124,9 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
         val kclass = type.classifier as KClass<*>
         // Try standard types
-        val resolved = when (kclass) {
+        val resolved = if (kclass.isSubclassOf(List::class)) {
+            GraphQLList.list(resolveOutputType(type.arguments[0].type!!))
+        } else null ?: when (kclass) {
             Int::class -> Scalars.GraphQLInt
             Float::class -> Scalars.GraphQLFloat
             Double::class -> Scalars.GraphQLFloat
@@ -132,11 +135,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-            ?: scalars[kclass] ?: enums[kclass] ?: interfaces[kclass] ?: types[kclass]
-            // Fallback to late binding if possible
-            ?: names[kclass]?.let { GraphQLTypeReference(it) }
-            // We won't ever see it
-            ?: throw Exception("Can't resolve $type to a valid graphql type")
+        ?: scalars[kclass] ?: enums[kclass] ?: interfaces[kclass] ?: types[kclass]
+        // Fallback to late binding if possible
+        ?: names[kclass]?.let { GraphQLTypeReference(it) }
+        // We won't ever see it
+        ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
@@ -147,8 +150,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     private fun resolveInputType(type: KType): GraphQLInputType {
 
         val kclass = type.classifier as KClass<*>
+
         // Try standard types
-        val resolved = when (kclass) {
+        val resolved = if (kclass.isSubclassOf(List::class)) {
+            GraphQLList.list(resolveInputType(type.arguments[0].type!!))
+        } else null ?: when (kclass) {
             Int::class -> Scalars.GraphQLInt
             Float::class -> Scalars.GraphQLFloat
             Double::class -> Scalars.GraphQLFloat
@@ -157,11 +163,11 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             else -> null
         }
         // Try to search through what has already been mapped
-            ?: scalars[kclass] ?: enums[kclass]
-            // Fallback to late binding if possible
-            ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
-            // We won't ever see it
-            ?: throw Exception("Can't resolve $type to a valid graphql type")
+        ?: scalars[kclass] ?: enums[kclass]
+        // Fallback to late binding if possible
+        ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
+        // We won't ever see it
+        ?: throw Exception("Can't resolve $type to a valid graphql type")
 
         return if (type.isMarkedNullable) {
             resolved
