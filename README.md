@@ -27,11 +27,11 @@ object UrlCoercing : Coercing<URL, String> {
     }
 
     override fun parseValue(input: Any): URL =
-            if (input is StringValue) try {
-                URL(input.value)
-            } catch (e: Exception) {
-                throw CoercingParseValueException(e)
-            } else throw CoercingParseValueException("Expected a StringValue for Url")
+        if (input is StringValue) try {
+            URL(input.value)
+        } catch (e: Exception) {
+            throw CoercingParseValueException(e)
+        } else throw CoercingParseValueException("Expected a StringValue for Url")
 
     override fun parseLiteral(input: Any): URL = try {
         URL(input as String)
@@ -125,7 +125,8 @@ val schema = SchemaGenerator {
 - [x] Special types (CompletableFuture and Publisher)
 - [x] Suspend and Flow support
 - [ ] Complete type checking using reflection
-- [ ] Suspend in custom fields
+- [x] Suspend in custom fields
+- [ ] Non suspend custom fields
 - [ ] Schema element description
 - [ ] Directive support
 - [ ] Union types

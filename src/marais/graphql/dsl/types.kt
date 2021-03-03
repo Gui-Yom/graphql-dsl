@@ -118,19 +118,19 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
     fun <O> field(
         name: String,
         description: String? = null,
-        resolver: R.() -> O
+        resolver: suspend R.() -> O
     ) {
         val reflected = resolver.reflect()!!
         fields += CustomField(
             name,
             description,
-            if (reflected.returnType.isValidContainer()) reflected.returnType.unwrap() else reflected.returnType,
-            emptyList()
-        ) {
-            resolver(
-                it.getSource()
-            )
-        }
+            reflected.returnType.representationType(),
+            emptyList(),
+            suspendFetcher {
+                resolver(
+                    it.getSource()
+                )
+            })
     }
 
     // TODO Maybe inlining could be better to obtain the type of A
@@ -139,7 +139,7 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
     fun <O, A> field(
         name: String,
         description: String? = null,
-        resolver: R.(A) -> O
+        resolver: suspend R.(A) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
@@ -147,21 +147,21 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         fields += CustomField(
             name,
             description,
-            if (reflected.returnType.isValidContainer()) reflected.returnType.unwrap() else reflected.returnType,
-            args
-        ) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it)
-            )
-        }
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it)
+                )
+            })
     }
 
     @SchemaDsl
     fun <O, A, B> field(
         name: String,
         description: String? = null,
-        resolver: R.(A, B) -> O
+        resolver: suspend R.(A, B) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
@@ -170,43 +170,48 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         fields += CustomField(
             name,
             description,
-            if (reflected.returnType.isValidContainer()) reflected.returnType.unwrap() else reflected.returnType,
-            args
-        ) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it),
-                arg1.resolve(it)
-            )
-        }
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it),
+                    arg1.resolve(it)
+                )
+            })
     }
 
     @SchemaDsl
     fun <O, A, B, C> field(
         name: String,
         description: String? = null,
-        resolver: R.(A, B, C) -> O
+        resolver: suspend R.(A, B, C) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
         val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
         val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
-        fields += CustomField(name, description, reflected.returnType, args) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it),
-                arg1.resolve(it),
-                arg2.resolve(it)
-            )
-        }
+        fields += CustomField(
+            name,
+            description,
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it),
+                    arg1.resolve(it),
+                    arg2.resolve(it)
+                )
+            })
     }
 
     @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
         description: String? = null,
-        resolver: R.(A, B, C, D) -> O
+        resolver: suspend R.(A, B, C, D) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
@@ -214,22 +219,27 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
         val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
         val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
-        fields += CustomField(name, description, reflected.returnType, args) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it),
-                arg1.resolve(it),
-                arg2.resolve(it),
-                arg3.resolve(it)
-            )
-        }
+        fields += CustomField(
+            name,
+            description,
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it),
+                    arg1.resolve(it),
+                    arg2.resolve(it),
+                    arg3.resolve(it)
+                )
+            })
     }
 
     @SchemaDsl
     fun <O, A, B, C, D, E> field(
         name: String,
         description: String? = null,
-        resolver: R.(A, B, C, D, E) -> O
+        resolver: suspend R.(A, B, C, D, E) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
@@ -238,23 +248,28 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
         val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
         val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
-        fields += CustomField(name, description, reflected.returnType, args) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it),
-                arg1.resolve(it),
-                arg2.resolve(it),
-                arg3.resolve(it),
-                arg4.resolve(it)
-            )
-        }
+        fields += CustomField(
+            name,
+            description,
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it),
+                    arg1.resolve(it),
+                    arg2.resolve(it),
+                    arg3.resolve(it),
+                    arg4.resolve(it)
+                )
+            })
     }
 
     @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
         description: String? = null,
-        resolver: R.(A, B, C, D, E, F) -> O
+        resolver: suspend R.(A, B, C, D, E, F) -> O
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
@@ -264,17 +279,22 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
         val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
         val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
         val arg5 = Argument(reflected.valueParameters[5]).also { if (!it.isSpecialType()) args += it }
-        fields += CustomField(name, description, reflected.returnType, args) {
-            resolver(
-                it.getSource(),
-                arg0.resolve(it),
-                arg1.resolve(it),
-                arg2.resolve(it),
-                arg3.resolve(it),
-                arg4.resolve(it),
-                arg5.resolve(it)
-            )
-        }
+        fields += CustomField(
+            name,
+            description,
+            reflected.returnType.representationType(),
+            args,
+            suspendFetcher {
+                resolver(
+                    it.getSource(),
+                    arg0.resolve(it),
+                    arg1.resolve(it),
+                    arg2.resolve(it),
+                    arg3.resolve(it),
+                    arg4.resolve(it),
+                    arg5.resolve(it)
+                )
+            })
     }
 }
 

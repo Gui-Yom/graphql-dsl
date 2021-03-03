@@ -2,6 +2,7 @@ package marais.graphql.generator
 
 import graphql.TrivialDataFetcher
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -45,15 +46,13 @@ fun functionFetcher(
     receiver: Any? = null
 ): DataFetcher<Any?> {
     return if (func.isSuspend) {
-        DataFetcher { env ->
-            scope.future(context) {
-                transformResult(func.callSuspend(
-                    receiver ?: env.getSource(),
-                    *args.map {
-                        it.resolve<Any>(env)
-                    }.toTypedArray()
-                ), context)
-            }
+        suspendFetcher { env ->
+            func.callSuspend(
+                receiver ?: env.getSource(),
+                *args.map {
+                    it.resolve<Any>(env)
+                }.toTypedArray()
+            )
         }
     } else {
         DataFetcher { env ->
@@ -63,6 +62,21 @@ fun functionFetcher(
                     it.resolve<Any>(env)
                 }.toTypedArray()
             ), context)
+        }
+    }
+}
+
+/**
+ * Convert suspend call to a java CompletableFuture
+ */
+fun <O> suspendFetcher(
+    scope: CoroutineScope = GlobalScope,
+    context: CoroutineContext = EmptyCoroutineContext,
+    inner: suspend (DataFetchingEnvironment) -> O
+): DataFetcher<Any?> {
+    return DataFetcher {
+        scope.future(context) {
+            transformResult(inner(it), context)
         }
     }
 }
