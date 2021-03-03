@@ -10,13 +10,13 @@ import java.net.URL
 import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
 
-abstract class Node(val id: String)
+abstract class Node(open val id: MyId)
 
-class MyData(id: String, val field: Int) : Node(id) {
+class MyData(id: MyId, val field: Int) : Node(id) {
     fun dec(): Int = field - 1
 }
 
-class OtherData(id: String, val field: URL) : Node(id) {
+data class OtherData(override val id: MyId, val field: URL) : Node(id) {
 
     fun additional(param: String): String = param
 }
@@ -48,11 +48,13 @@ enum class MyEnum {
 
 data class Input(val a: String)
 
-data class MyId(val inner: String)
+data class MyId(val inner: String) {
+    override fun toString(): String = inner
+}
 
 object Query {
-    val data = MyData("69420", 42)
-    val otherdata = OtherData("42069", URL("http://localhost:8080"))
+    val data = MyData(MyId("69420"), 42)
+    val otherdata = OtherData(MyId("42069"), URL("http://localhost:8080"))
 
     fun node() = if (Random.nextBoolean()) data else otherdata
 

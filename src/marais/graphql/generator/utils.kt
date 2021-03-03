@@ -9,19 +9,22 @@ import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 
-fun isValidClassForType(kclass: KClass<*>): Boolean {
+internal fun isValidClassForType(kclass: KClass<*>): Boolean {
     return !(kclass.isSealed || kclass.isAbstract)
 }
 
-fun isValidClassForInterface(kclass: KClass<*>): Boolean {
+internal fun isValidClassForInterface(kclass: KClass<*>): Boolean {
     return kclass.isSealed || kclass.isAbstract || kclass.isOpen
 }
+
+internal val invalidFunctionName = listOf("equals", "hashCode", "toString", "copy")
+internal val componentPattern = Regex("component[0-9]+")
 
 /**
  * The functions we do not include automatically while deriving
  */
-fun isValidFunctionDerive(name: String): Boolean {
-    return name !in listOf("equals", "hashCode", "toString")
+internal fun isValidFunctionDerive(name: String): Boolean {
+    return name !in invalidFunctionName && !componentPattern.matches(name)
 }
 
 internal val flowType = Flow::class.createType(listOf(KTypeProjection.STAR))
@@ -29,14 +32,14 @@ internal val deferredType = Deferred::class.createType(listOf(KTypeProjection.ST
 internal val futureType = CompletableFuture::class.createType(listOf(KTypeProjection.STAR))
 internal val publisherType = Publisher::class.createType(listOf(KTypeProjection.STAR))
 
-fun KType.isFlow(): Boolean = classifier == flowType.classifier
+internal fun KType.isFlow(): Boolean = classifier == flowType.classifier
 
-fun KType.isValidContainer(): Boolean {
+internal fun KType.isValidContainer(): Boolean {
     return isFlow() || classifier == deferredType.classifier || classifier == futureType.classifier || classifier == publisherType.classifier
 }
 
-fun KType.unwrap(): KType = arguments[0].type!!
+internal fun KType.unwrap(): KType = arguments[0].type!!
 
-fun KType.representationType(): KType = if (isValidContainer()) unwrap() else this
+internal fun KType.representationType(): KType = if (isValidContainer()) unwrap() else this
 
-fun KType.name(): String = (classifier!! as KClass<*>).simpleName!!
+internal fun KType.name(): String = (classifier!! as KClass<*>).simpleName!!

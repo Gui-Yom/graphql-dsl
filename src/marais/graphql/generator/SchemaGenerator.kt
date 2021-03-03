@@ -163,15 +163,18 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     }
 
     private fun resolveInOutType(kclass: KClass<*>): GraphQLType? {
-        return when (kclass) {
+        return scalars[kclass] ?: when (kclass) {
             Int::class -> Scalars.GraphQLInt
+            Short::class -> Scalars.GraphQLInt // default
+            Byte::class -> Scalars.GraphQLInt // default
             Float::class -> Scalars.GraphQLFloat
-            Double::class -> Scalars.GraphQLFloat
+            Double::class -> Scalars.GraphQLFloat // default
             String::class -> Scalars.GraphQLString
+            Char::class -> Scalars.GraphQLString // default
             Boolean::class -> Scalars.GraphQLBoolean
             in schemaBuilder.idTypes -> Scalars.GraphQLID
             else -> null
-        } ?: scalars[kclass] ?: enums[kclass]
+        } ?: enums[kclass]
     }
 
     private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition? {
