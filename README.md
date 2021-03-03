@@ -40,7 +40,7 @@ object UrlCoercing : Coercing<URL, String> {
     }
 }
 
-enum class MyEnum {
+enum class Baz {
     VALUE0,
     VALUE1,
     VALUE2
@@ -54,7 +54,7 @@ object Query {
 
     fun node() = if (Random.nextBoolean()) data else otherdata
 
-    suspend fun testSuspend() = 42
+    suspend fun suspending() = 42
 }
 
 // Access the DSL
@@ -64,7 +64,7 @@ val schema = SchemaGenerator {
     scalar("Url", UrlCoercing)
 
     // Define an enum directly based on its values
-    enum<MyEnum>()
+    enum<Baz>()
 
     // Define an input type
     input<Input>()
@@ -124,7 +124,8 @@ val schema = SchemaGenerator {
 - [x] Enums
 - [x] Special types (CompletableFuture and Publisher)
 - [x] Suspend and Flow support
-- [ ] Union types
 - [ ] Complete type checking using reflection
 - [ ] Suspend in custom fields
+- [ ] Schema element description
 - [ ] Directive support
+- [ ] Union types

@@ -65,8 +65,6 @@ tasks {
         kotlinOptions {
             useIR = true
             jvmTarget = JavaVersion.VERSION_11.toString()
-            //javaParameters = true
-            //freeCompilerArgs = listOf("-Xemit-jvm-type-annotations")
         }
     }
 
@@ -76,12 +74,12 @@ tasks {
 
     publishing {
         publications {
-            create<MavenPublication>("mercuri-core") {
+            create<MavenPublication>("graphql-dsl") {
                 from(project.components["java"])
                 pom {
                     name.set(rootProject.name)
                     description.set("")
-                    url.set("https://github.com/Mercuri-Inc/mercuri-core")
+                    url.set("https://github.com/Gui-Yom/graphql-dsl")
                     developers {
                         developer {
                             id.set("Gui-Yom")
@@ -89,9 +87,9 @@ tasks {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/Mercuri-Inc/mercuri-core.git")
-                        developerConnection.set("scm:git:ssh://github.com/Mercuri-Inc/mercuri-core.git")
-                        url.set("https://github.com/Mercuri-Inc/mercuri-core/")
+                        connection.set("scm:git:git://github.com/Gui-Yom/graphql-dsl.git")
+                        developerConnection.set("scm:git:ssh://github.com/Gui-Yom/graphql-dsl.git")
+                        url.set("https://github.com/Gui-Yom/graphql-dsl/")
                     }
                 }
             }

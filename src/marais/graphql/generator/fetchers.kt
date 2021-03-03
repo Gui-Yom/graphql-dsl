@@ -19,7 +19,7 @@ import kotlin.reflect.full.callSuspend
 
 fun <R, O> propertyFetcher(property: KProperty1<R, O>, receiver: R? = null): DataFetcher<O> {
     return receiver?.let { TrivialDataFetcher { property.getter(receiver) } }
-            ?: PropertyDataFetcher.fetching(property.getter)
+        ?: PropertyDataFetcher.fetching(property.getter)
 }
 
 /**
@@ -38,30 +38,30 @@ fun transformResult(value: Any?, context: CoroutineContext = EmptyCoroutineConte
  * Handles the case where the function is suspend or returns Flow
  */
 fun functionFetcher(
-        func: KFunction<Any?>,
-        args: List<Argument>,
-        scope: CoroutineScope = GlobalScope,
-        context: CoroutineContext = EmptyCoroutineContext,
-        receiver: Any? = null
+    func: KFunction<Any?>,
+    args: List<Argument>,
+    scope: CoroutineScope = GlobalScope,
+    context: CoroutineContext = EmptyCoroutineContext,
+    receiver: Any? = null
 ): DataFetcher<Any?> {
     return if (func.isSuspend) {
         DataFetcher { env ->
             scope.future(context) {
                 transformResult(func.callSuspend(
-                        receiver ?: env.getSource(),
-                        *args.map {
-                            it.resolve<Any>(env)
-                        }.toTypedArray()
+                    receiver ?: env.getSource(),
+                    *args.map {
+                        it.resolve<Any>(env)
+                    }.toTypedArray()
                 ), context)
             }
         }
     } else {
         DataFetcher { env ->
             transformResult(func.call(
-                    receiver ?: env.getSource(),
-                    *args.map {
-                        it.resolve<Any>(env)
-                    }.toTypedArray()
+                receiver ?: env.getSource(),
+                *args.map {
+                    it.resolve<Any>(env)
+                }.toTypedArray()
             ), context)
         }
     }

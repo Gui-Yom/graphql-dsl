@@ -11,11 +11,11 @@ annotation class SchemaDsl
 @SchemaDsl
 class SchemaBuilder {
 
-    val scalars = mutableListOf<Scalar>()
-    val enums = mutableListOf<Enum>()
+    val scalars = mutableListOf<ScalarBuilder>()
+    val enums = mutableListOf<EnumBuilder>()
 
     // Maps a kotlin type to a graphql input type declaration
-    val inputs = mutableListOf<Input>()
+    val inputs = mutableListOf<InputBuilder>()
 
     // Maps a kotlin type to a graphql interface declaration
     val interfaces = mutableListOf<InterfaceBuilder<*>>()
@@ -29,35 +29,35 @@ class SchemaBuilder {
 
     @SchemaDsl
     inline fun <reified T : Any> scalar(
-            name: String,
-            coercing: Coercing<T, String>,
-            noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
+        name: String,
+        coercing: Coercing<T, *>,
+        noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        scalars += Scalar(name, T::class, coercing, builder)
+        scalars += ScalarBuilder(name, T::class, coercing, builder)
     }
 
     @SchemaDsl
-    inline fun <reified T> enum(
-            name: String? = null,
-            noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
+    inline fun <reified T : Enum<T>> enum(
+        name: String? = null,
+        noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        enums += Enum(name ?: kclass.simpleName!!, kclass, builder)
+        enums += EnumBuilder(name ?: kclass.simpleName!!, kclass, builder)
     }
 
     @SchemaDsl
-    inline fun <reified T> input(
-            name: String? = null,
-            noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
+    inline fun <reified T : Any> input(
+        name: String? = null,
+        noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        inputs += Input(name ?: kclass.simpleName!!, kclass, builder)
+        inputs += InputBuilder(name ?: kclass.simpleName!!, kclass, builder)
     }
 
     @SchemaDsl
     inline fun <reified T : Any> inter(
-            name: String? = null,
-            configure: InterfaceBuilder<T>.() -> Unit = {}
+        name: String? = null,
+        configure: InterfaceBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
         interfaces += InterfaceBuilder(kclass, name).apply(configure)
@@ -65,8 +65,8 @@ class SchemaBuilder {
 
     @SchemaDsl
     inline fun <reified T : Any> type(
-            name: String? = null,
-            configure: TypeBuilder<T>.() -> Unit = {}
+        name: String? = null,
+        configure: TypeBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
         types += TypeBuilder(kclass, name).apply(configure)

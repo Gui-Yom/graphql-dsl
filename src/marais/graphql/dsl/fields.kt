@@ -21,7 +21,7 @@ sealed class Field(val name: String, val description: String? = null) {
 
 data class Argument(val name: String, val type: KType) {
 
-    constructor(param: KParameter) : this(param.name!!, param.type)
+    constructor(param: KParameter) : this(param.name ?: "anon", param.type)
 
     companion object {
         val envType = DataFetchingEnvironment::class.createType()
@@ -39,18 +39,18 @@ data class Argument(val name: String, val type: KType) {
 }
 
 class CustomField(
-        name: String,
-        description: String? = null,
-        override val outputType: KType,
-        override val arguments: List<Argument> = emptyList(),
-        override val dataFetcher: DataFetcher<Any?>
+    name: String,
+    description: String? = null,
+    override val outputType: KType,
+    override val arguments: List<Argument> = emptyList(),
+    override val dataFetcher: DataFetcher<Any?>
 ) : Field(name, description)
 
 class PropertyField<R>(
-        val property: KProperty1<R, Any?>,
-        name: String? = null,
-        description: String? = null,
-        instance: R? = null
+    val property: KProperty1<R, Any?>,
+    name: String? = null,
+    description: String? = null,
+    instance: R? = null
 ) : Field(name ?: property.name, description) {
 
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
@@ -60,10 +60,10 @@ class PropertyField<R>(
 
 // FIXME it is currently impossible to specify the receiver for the KFunction
 class FunctionField<R>(
-        val func: KFunction<Any?>,
-        name: String? = null,
-        description: String? = null,
-        instance: R? = null
+    val func: KFunction<Any?>,
+    name: String? = null,
+    description: String? = null,
+    instance: R? = null
 ) : Field(name ?: func.name, description) {
 
     override val outputType: KType = func.returnType.representationType()

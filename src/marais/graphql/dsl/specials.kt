@@ -8,23 +8,23 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 
-data class Scalar(
-        val name: String,
-        val kclass: KClass<*>,
-        val coercing: Coercing<*, *>,
-        val builder: GraphQLScalarType.Builder.() -> Unit
+data class ScalarBuilder(
+    val name: String,
+    val kclass: KClass<*>,
+    val coercing: Coercing<*, *>,
+    val builder: GraphQLScalarType.Builder.() -> Unit
 )
 
-data class Enum(
-        val name: String,
-        val kclass: KClass<*>,
-        val builder: GraphQLEnumType.Builder.() -> Unit
+data class EnumBuilder(
+    val name: String,
+    val kclass: KClass<*>,
+    val builder: GraphQLEnumType.Builder.() -> Unit
 )
 
-data class Input(
-        val name: String,
-        val kclass: KClass<*>,
-        val builder: GraphQLInputObjectType.Builder.() -> Unit
+data class InputBuilder(
+    val name: String,
+    val kclass: KClass<*>,
+    val builder: GraphQLInputObjectType.Builder.() -> Unit
 ) {
     val fields = mutableListOf<Pair<String, KType>>()
 

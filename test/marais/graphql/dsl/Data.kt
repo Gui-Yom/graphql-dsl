@@ -27,11 +27,11 @@ object UrlCoercing : Coercing<URL, String> {
     }
 
     override fun parseValue(input: Any): URL =
-            if (input is StringValue) try {
-                URL(input.value)
-            } catch (e: Exception) {
-                throw CoercingParseValueException(e)
-            } else throw CoercingParseValueException("Expected a StringValue for Url")
+        if (input is StringValue) try {
+            URL(input.value)
+        } catch (e: Exception) {
+            throw CoercingParseValueException(e)
+        } else throw CoercingParseValueException("Expected a StringValue for Url")
 
     override fun parseLiteral(input: Any): URL = try {
         URL(input as String)

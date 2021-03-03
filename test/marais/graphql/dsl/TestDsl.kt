@@ -34,7 +34,7 @@ class TestDsl {
                 field(MyData::dec)
                 field(MyData::field)
                 // Can be a custom function
-                field("inc") { it: DataFetchingEnvironment ->
+                field("inc") { _: DataFetchingEnvironment ->
                     field + 1
                 }
             }
