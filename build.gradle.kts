@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     `maven-publish`
+    signing
 }
 
 repositories {
@@ -71,28 +72,42 @@ tasks {
     test {
         useJUnitPlatform()
     }
+}
 
-    publishing {
-        publications {
-            create<MavenPublication>("graphql-dsl") {
-                from(project.components["java"])
-                pom {
-                    name.set(rootProject.name)
-                    description.set("")
-                    url.set("https://github.com/Gui-Yom/graphql-dsl")
-                    developers {
-                        developer {
-                            id.set("Gui-Yom")
-                            name.set("Guillaume Anthouard")
-                        }
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("root") {
+            from(project.components["java"])
+            pom {
+                name.set(rootProject.name)
+                description.set("")
+                url.set("https://github.com/Gui-Yom/graphql-dsl")
+                developers {
+                    developer {
+                        id.set("Gui-Yom")
+                        name.set("Guillaume Anthouard")
                     }
-                    scm {
-                        connection.set("scm:git:git://github.com/Gui-Yom/graphql-dsl.git")
-                        developerConnection.set("scm:git:ssh://github.com/Gui-Yom/graphql-dsl.git")
-                        url.set("https://github.com/Gui-Yom/graphql-dsl/")
-                    }
+                }
+                scm {
+                    connection.set("scm:git:git://github.com/Gui-Yom/graphql-dsl.git")
+                    developerConnection.set("scm:git:ssh://github.com/Gui-Yom/graphql-dsl.git")
+                    url.set("https://github.com/Gui-Yom/graphql-dsl/")
                 }
             }
         }
     }
+}
+
+signing {
+    sign(publishing.publications["root"])
 }
