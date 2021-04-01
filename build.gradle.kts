@@ -74,16 +74,18 @@ tasks {
     }
 }
 
+fun RepositoryHandler.githubPackages(path: String) = maven {
+    name = "GitHubPackages"
+    url = uri("https://maven.pkg.github.com/$path")
+    credentials {
+        username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+        password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+    }
+}
+
 publishing {
     repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-            }
-        }
+        githubPackages("Gui-Yom/graphql-dsl")
     }
     publications {
         create<MavenPublication>("root") {
