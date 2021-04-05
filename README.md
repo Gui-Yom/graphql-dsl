@@ -130,3 +130,4 @@ val schema = SchemaGenerator {
 - [ ] Schema element description
 - [ ] Directive support
 - [ ] Union types
+- [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)

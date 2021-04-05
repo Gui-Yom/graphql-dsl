@@ -2,6 +2,7 @@ package marais.graphql.dsl
 
 import graphql.schema.StaticDataFetcher
 import marais.graphql.generator.*
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
@@ -10,6 +11,8 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
+
+private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
 
 @SchemaDsl
 sealed class Type<R : Any>(val name: String) {
@@ -69,7 +72,7 @@ sealed class Type<R : Any>(val name: String) {
 
     internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
         for (member in kclass.memberProperties) {
-            println("found property : $member")
+            log.debug("found property : $member")
             fields += PropertyField(member, instance = instance)
         }
     }
@@ -77,7 +80,7 @@ sealed class Type<R : Any>(val name: String) {
     internal fun deriveFunctions(kclass: KClass<R>, instance: R?) {
         for (member in kclass.memberFunctions) {
             if (isValidFunctionDerive(member.name)) {
-                println("found function : $member")
+                log.debug("found function : $member")
                 fields += FunctionField(member, instance = instance)
             }
         }

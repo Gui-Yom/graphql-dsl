@@ -38,6 +38,7 @@ dependencies {
 
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.2.3")
 }
 
 sourceSets {

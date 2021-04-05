@@ -3,11 +3,14 @@ package marais.graphql.generator
 import graphql.Scalars
 import graphql.schema.*
 import marais.graphql.dsl.*
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 
 class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
+
+    private val log = LoggerFactory.getLogger(SchemaGenerator::class.java)
 
     private val schemaBuilder = SchemaBuilder().apply(configure)
 
@@ -35,7 +38,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
                 .build()
         }
 
-        println("Registered scalars : $scalars")
+        log.debug("Registered scalars : $scalars")
 
         enums += schemaBuilder.enums.map {
             names[it.kclass] = it.name
@@ -49,7 +52,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
                 .build()
         }
 
-        println("Registered enums : $enums")
+        log.debug("Registered enums : $enums")
 
         // Early name registration
         schemaBuilder.inputs.forEach {
@@ -93,7 +96,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
                 .build()
         }
 
-        println("Registered interfaces : $interfaces")
+        log.debug("Registered interfaces : $interfaces")
 
         // Any other types
         types += schemaBuilder.types.map {
@@ -101,7 +104,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
             it.kclass to makeObject(it)
         }
 
-        println("Registered types : $types")
+        log.debug("Registered types : $types")
 
         val query = makeOperation(schemaBuilder.query)
         val mutation = schemaBuilder.mutation?.let { makeOperation(it) }
