@@ -4,10 +4,13 @@ import graphql.GraphQL
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.SchemaPrinter
 import marais.graphql.generator.SchemaGenerator
+import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class TestDsl {
+    private val log = LoggerFactory.getLogger(TestDsl::class.java)
+
     @ExperimentalStdlibApi
     @Test
     fun testDsl() {
@@ -63,12 +66,13 @@ class TestDsl {
         val initTime = System.currentTimeMillis() - startTime
         val schema = builder.build()
         val buildTime = System.currentTimeMillis() - startTime
-        println("Schema build time : $buildTime ms (of init : $initTime ms)")
+        log.debug("Schema build time : $buildTime ms (of init : $initTime ms)")
 
-        println(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
+        log.debug(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
 
         val graphql = GraphQL.newGraphQL(schema).build()
-        val result = graphql.execute("""
+        val result = graphql.execute(
+            """
             query {
               data {
                 id,
@@ -91,9 +95,10 @@ class TestDsl {
               testDeferred,
               testFuture
             }
-        """.trimIndent())
-        println(result.getData<Map<String, Any?>>())
+        """.trimIndent()
+        )
+        log.debug(result.getData<Map<String, Any?>>().toString())
         assertTrue(result.errors.isEmpty(), "${result.errors}")
-        println(result.extensions)
+        log.debug(result.extensions?.toString())
     }
 }

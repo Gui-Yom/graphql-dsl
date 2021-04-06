@@ -114,7 +114,7 @@ val schema = SchemaGenerator {
 }.build()
 ```
 
-## Roadmap
+## Features
 
 - [x] Basic types + fields
 - [x] Scalars
@@ -131,3 +131,4 @@ val schema = SchemaGenerator {
 - [ ] Directive support
 - [ ] Union types
 - [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)
+- [ ] Relay types builder, similar to graphql-java's relay helpers
