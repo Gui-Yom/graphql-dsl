@@ -48,10 +48,10 @@ class CustomField(
 
 class PropertyField<R>(
     val property: KProperty1<R, Any?>,
-    name: String? = null,
+    name: String,
     description: String? = null,
     instance: R? = null
-) : Field(name ?: property.name, description) {
+) : Field(name, description) {
 
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.representationType()
@@ -61,10 +61,10 @@ class PropertyField<R>(
 // FIXME it is currently impossible to specify the receiver for the KFunction
 class FunctionField<R>(
     val func: KFunction<Any?>,
-    name: String? = null,
+    name: String,
     description: String? = null,
     instance: R? = null
-) : Field(name ?: func.name, description) {
+) : Field(name, description) {
 
     override val outputType: KType = func.returnType.representationType()
     override val arguments: MutableList<Argument> = mutableListOf()
@@ -82,4 +82,12 @@ class FunctionField<R>(
     }
 
     override val dataFetcher: DataFetcher<Any?> = functionFetcher(func, funcArgs, receiver = instance)
+}
+
+fun List<Field>.containsWithName(name: String): Boolean {
+    for (field in this) {
+        if (field.name == name)
+            return true
+    }
+    return false
 }

@@ -6,6 +6,7 @@ import graphql.schema.idl.SchemaPrinter
 import marais.graphql.generator.SchemaGenerator
 import org.slf4j.LoggerFactory
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class TestDsl {
@@ -26,6 +27,10 @@ class TestDsl {
 
             inter<Node> {
                 derive()
+
+                field("parent") { ->
+                    MyId("Node:" + id.inner)
+                }
             }
 
             type<MyData> {
@@ -33,10 +38,13 @@ class TestDsl {
                 inter<Node>()
 
                 // Can be a property
-                field(MyData::id)
+                include(MyData::id)
                 // Can be a member function
-                field(MyData::dec)
-                field(MyData::field)
+                include(MyData::dec)
+                assertFailsWith<Exception>("We already included that field with the same name") {
+                    include(MyData::dec)
+                }
+                include(MyData::field)
                 // Can be a custom function
                 field("inc") { _: DataFetchingEnvironment ->
                     field + 1
@@ -47,6 +55,11 @@ class TestDsl {
                 inter<Node>()
 
                 derive()
+
+                -OtherData::field
+                assertFailsWith<Exception>("We already removed this field") {
+                    exclude(OtherData::field)
+                }
 
                 field("custom") { param: String ->
                     param
@@ -82,14 +95,14 @@ class TestDsl {
               },
               otherdata {
                 id,
-                field,
                 custom(param: "hello"),
                 custom2(a: [1, 2, 3], b: 4)
               },
               node {
-                id, 
+                id,
+                parent,
                 ... on MyData { value: field },
-                ... on OtherData { url: field }
+                ... on OtherData { custom(param: "hello") }
               },
               testSuspend,
               testDeferred,
@@ -97,7 +110,7 @@ class TestDsl {
             }
         """.trimIndent()
         )
-        log.debug(result.getData<Map<String, Any?>>().toString())
+        log.debug(result.getData<Map<String, Any?>?>()?.toString())
         assertTrue(result.errors.isEmpty(), "${result.errors}")
         log.debug(result.extensions?.toString())
     }

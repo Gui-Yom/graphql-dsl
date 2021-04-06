@@ -180,7 +180,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
         } ?: enums[kclass]
     }
 
-    private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition? {
+    private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition {
         // Register the field data fetcher
         codeRegistry.dataFetcher(FieldCoordinates.coordinates(parentType, field.name), field.dataFetcher)
 
@@ -202,6 +202,23 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
     private fun makeObject(type: TypeBuilder<*>): GraphQLObjectType {
         val fields = type.fields.map { field ->
             makeField(field, type.name)
+        }.toMutableList()
+
+        // FIXME ho god writing this has hurt my ego as good developer
+        for (inter in type.interfaces) {
+            for (field in interfaces[inter]!!.fieldDefinitions) {
+                // If we can't find an implementation, use the impl from the parent
+                if (fields.find { it.name == field.name } == null) {
+                    fields.add(field)
+                    // Register the field data fetcher
+                    codeRegistry.dataFetcher(
+                        FieldCoordinates.coordinates(type.name, field.name),
+                        schemaBuilder.interfaces.find { it.kclass == inter }!!
+                            .fields.find { it.name == field.name }!!
+                            .dataFetcher
+                    )
+                }
+            }
         }
 
         return GraphQLObjectType.newObject()

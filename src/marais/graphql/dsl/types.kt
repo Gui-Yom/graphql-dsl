@@ -18,51 +18,90 @@ private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
 sealed class Type<R : Any>(val name: String) {
     val fields: MutableList<Field> = mutableListOf()
 
+    /**
+     * Include a field from a static value. No computations, a plain static value that won't ever change.
+     */
     @ExperimentalStdlibApi
     inline fun <reified T : Any> static(name: String, value: T) {
         fields += CustomField(name, null, typeOf<T>(), emptyList(), StaticDataFetcher(value))
     }
 
+    /**
+     * Include a field originating from a class property.
+     */
     @SchemaDsl
-    fun <O> field(
+    fun <O> include(
         property: KProperty1<R, O>,
-        name: String? = null,
+        name: String = property.name,
         description: String? = null
     ) {
+        if (fields.containsWithName(name))
+            throw Exception("A field with this name is already included")
         fields += PropertyField(property, name, description)
     }
 
+    /**
+     * Include a field originating from a class function.
+     */
     @SchemaDsl
-    fun <O : Any?> field(
+    fun <O : Any?> include(
         func: KFunction<O>,
-        name: String? = null,
+        name: String = func.name,
         description: String? = null
     ) {
+        if (fields.containsWithName(name))
+            throw Exception("A field with this name is already included")
         fields += FunctionField<R>(func, name, description)
     }
 
+    /**
+     * Include a field originating from a class property.
+     */
+    operator fun KProperty1<R, *>.unaryPlus() {
+        include(this)
+    }
+
+    /**
+     * Include a field originating from a class function.
+     */
+    operator fun KFunction<*>.unaryPlus() {
+        include(this)
+    }
+
+    /**
+     * Exclude all field originating from a class property.
+     */
+    fun exclude(prop: KProperty1<R, *>) {
+        if (!fields.removeIf {
+                if (it is PropertyField<*>) {
+                    it.property == prop
+                } else false
+            }) throw Exception("Trying to remove a field that's not included")
+    }
+
+    /**
+     * Exclude all field originating from a class function.
+     */
+    fun exclude(func: KFunction<*>) {
+        if (!fields.removeIf {
+                if (it is FunctionField<*>) {
+                    it.func == func
+                } else false
+            }) throw Exception("Trying to remove a field that's not included")
+    }
+
+    /**
+     * Exclude all field originating from a class property.
+     */
     operator fun KProperty1<R, *>.unaryMinus() {
         exclude(this)
     }
 
+    /**
+     * Exclude all field originating from a class function.
+     */
     operator fun KFunction<*>.unaryMinus() {
         exclude(this)
-    }
-
-    fun exclude(prop: KProperty1<R, *>) {
-        fields.removeIf {
-            if (it is PropertyField<*>) {
-                it.property == prop
-            } else false
-        }
-    }
-
-    fun exclude(func: KFunction<*>) {
-        fields.removeIf {
-            if (it is FunctionField<*>) {
-                it.func == func
-            } else false
-        }
     }
 
     internal fun derive(kclass: KClass<R>, instance: R?) {
@@ -73,7 +112,7 @@ sealed class Type<R : Any>(val name: String) {
     internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
         for (member in kclass.memberProperties) {
             log.debug("found property : $member")
-            fields += PropertyField(member, instance = instance)
+            fields += PropertyField(member, member.name, instance = instance)
         }
     }
 
@@ -81,38 +120,9 @@ sealed class Type<R : Any>(val name: String) {
         for (member in kclass.memberFunctions) {
             if (isValidFunctionDerive(member.name)) {
                 log.debug("found function : $member")
-                fields += FunctionField(member, instance = instance)
+                fields += FunctionField(member, member.name, instance = instance)
             }
         }
-    }
-}
-
-class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null) : Type<R>(name ?: kclass.simpleName!!) {
-
-    @SchemaDsl
-    fun derive() {
-        require(isValidClassForInterface(kclass))
-
-        super.derive(kclass, null)
-    }
-}
-
-class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name ?: kclass.simpleName!!) {
-
-    val interfaces = mutableListOf<KClass<*>>()
-
-    @SchemaDsl
-    fun derive() {
-
-        require(isValidClassForType(kclass))
-
-        super.derive(kclass, null)
-    }
-
-    @SchemaDsl
-    inline fun <reified I : Any> inter() {
-        // TODO check R : I
-        interfaces += I::class
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
@@ -301,15 +311,55 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name 
     }
 }
 
-class OperationBuilder<R : Any>(name: String, val instance: R) : Type<R>(name) {
+class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null) : Type<R>(name ?: kclass.simpleName!!) {
 
+    init {
+        require(isValidClassForInterface(kclass))
+    }
+
+    /**
+     * Include fields based on properties and functions present in the backing class.
+     */
     @SchemaDsl
     fun derive() {
+        super.derive(kclass, null)
+    }
+}
 
-        val kclass = instance::class
+class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name ?: kclass.simpleName!!) {
 
+    init {
         require(isValidClassForType(kclass))
+    }
 
+    val interfaces = mutableListOf<KClass<*>>()
+
+    /**
+     * Include fields based on properties and functions present in the backing class.
+     */
+    @SchemaDsl
+    fun derive() {
+        super.derive(kclass, null)
+    }
+
+    /**
+     * Declare this type as implementing another interface.
+     */
+    @SchemaDsl
+    inline fun <reified I : Any> inter() {
+        // TODO should we check that R : I
+        interfaces += I::class
+    }
+}
+
+class OperationBuilder<R : Any>(name: String, val instance: R) : Type<R>(name) {
+
+    /**
+     * Include fields based on properties and functions present in the backing class.
+     */
+    @SchemaDsl
+    fun derive() {
+        val kclass = instance::class
         super.derive(kclass as KClass<R>, instance)
     }
 }
