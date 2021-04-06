@@ -127,7 +127,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
         val kclass = type.classifier as KClass<*>
 
-        val resolved = if (kclass.isSubclassOf(List::class)) {
+        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
             GraphQLList.list(resolveOutputType(type.arguments[0].type!!))
         } else null
             ?: resolveInOutType(kclass) as? GraphQLOutputType
@@ -148,7 +148,7 @@ class SchemaGenerator(configure: SchemaBuilder.() -> Unit) {
 
         val kclass = type.classifier as KClass<*>
 
-        val resolved = if (kclass.isSubclassOf(List::class)) {
+        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
             GraphQLList.list(resolveInputType(type.arguments[0].type!!))
         } else null
             ?: resolveInOutType(kclass) as? GraphQLInputType
