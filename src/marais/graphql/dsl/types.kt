@@ -1,7 +1,6 @@
 package marais.graphql.dsl
 
 import graphql.schema.StaticDataFetcher
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
@@ -11,11 +10,12 @@ import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
-private val log = LoggerFactory.getLogger(SchemaSpec::class.java)
-
 @SchemaDsl
-sealed class Type<R : Any>(val name: String) {
+sealed class Type<R : Any>(val name: String, val description: String? = null) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
+
+    // For the DescriptionPublisher implementation
+    override var nextDesc: String? = null
 
     /**
      * Include a field from a static value. No computations, a plain static value that won't ever change.
@@ -31,12 +31,11 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O> include(
         property: KProperty1<R, O>,
-        name: String = property.name,
-        description: String? = null
+        name: String = property.name
     ) {
         if (fields.containsWithName(name))
             throw Exception("A field with this name is already included")
-        fields += PropertyField(property, name, description)
+        fields += PropertyField(property, name, takeDesc())
     }
 
     /**
@@ -46,11 +45,10 @@ sealed class Type<R : Any>(val name: String) {
     fun <O : Any?> include(
         func: KFunction<O>,
         name: String = func.name,
-        description: String? = null
     ) {
         if (fields.containsWithName(name))
             throw Exception("A field with this name is already included")
-        fields += FunctionField<R>(func, name, description)
+        fields += FunctionField<R>(func, name, takeDesc())
     }
 
     /**
@@ -129,13 +127,12 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.() -> O
     ) {
         val reflected = resolver.reflect()!!
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             emptyList(),
             suspendFetcher {
@@ -150,7 +147,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -158,7 +154,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -172,7 +168,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A, B> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A, B) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -181,7 +176,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -196,7 +191,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A, B, C> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A, B, C) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -206,7 +200,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -222,7 +216,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A, B, C, D) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -233,7 +226,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -250,7 +243,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A, B, C, D, E> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A, B, C, D, E) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -262,7 +254,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -280,7 +272,6 @@ sealed class Type<R : Any>(val name: String) {
     @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
-        description: String? = null,
         resolver: suspend R.(A, B, C, D, E, F) -> O
     ) {
         val reflected = resolver.reflect()!!
@@ -293,7 +284,7 @@ sealed class Type<R : Any>(val name: String) {
         val arg5 = Argument(reflected.valueParameters[5]).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
-            description,
+            takeDesc(),
             reflected.returnType.representationType(),
             args,
             suspendFetcher {
@@ -310,7 +301,8 @@ sealed class Type<R : Any>(val name: String) {
     }
 }
 
-class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null) : Type<R>(name ?: kclass.simpleName!!) {
+class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null, description: String? = null) :
+    Type<R>(name ?: kclass.simpleName!!, description) {
 
     init {
         require(isValidClassForInterface(kclass))
@@ -325,7 +317,8 @@ class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null) : T
     }
 }
 
-class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?) : Type<R>(name ?: kclass.simpleName!!) {
+class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?, description: String? = null) :
+    Type<R>(name ?: kclass.simpleName!!, description) {
 
     init {
         require(isValidClassForType(kclass))

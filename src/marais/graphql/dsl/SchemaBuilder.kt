@@ -9,7 +9,7 @@ import kotlin.reflect.full.isSubclassOf
 
 class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
-    private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
+    internal val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
 
     private val schemaBuilder = SchemaSpec().apply(configure)
 
@@ -38,6 +38,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             names[it.kclass] = it.name
             it.kclass to GraphQLScalarType.newScalar()
                 .name(it.name)
+                .description(it.description)
                 .coercing(it.coercing)
                 .apply(it.builder)
                 .build()
@@ -49,6 +50,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             names[it.kclass] = it.name
             it.kclass to GraphQLEnumType.newEnum()
                 .name(it.name)
+                .description(it.description)
                 .apply {
                     for (enumConstant: Enum<*> in it.kclass.java.enumConstants as Array<Enum<*>>) {
                         value(enumConstant.name)
@@ -59,7 +61,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
         log.debug("Registered enums : $enums")
 
-        // Early name registration
+        // Early name registration since input objects can refer to each other
         schemaBuilder.inputs.forEach {
             inputNames[it.kclass] = it.name
         }
@@ -67,6 +69,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
         inputs += schemaBuilder.inputs.map {
             it.kclass to GraphQLInputObjectType.newInputObject()
                 .name(it.name)
+                .description(it.description)
                 .fields(it.fields.map { (name, type) ->
                     GraphQLInputObjectField.newInputObjectField()
                         .name(name)
@@ -86,19 +89,8 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
         }
 
         // Interfaces
-        interfaces += schemaBuilder.interfaces.map { inter ->
-            val fields = inter.fields.map { field ->
-                makeField(field, inter.name)
-            }
-
-            codeRegistry.typeResolver(inter.name) { env ->
-                env.schema.getObjectType(names[names.keys.find { it == env.getObject<Any?>()::class }])
-            }
-
-            inter.kclass to GraphQLInterfaceType.newInterface()
-                .name(inter.name)
-                .fields(fields)
-                .build()
+        interfaces += schemaBuilder.interfaces.map {
+            it.kclass to makeInterface(it)
         }
 
         log.debug("Registered interfaces : $interfaces")
@@ -202,6 +194,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
         return GraphQLFieldDefinition.newFieldDefinition()
             .name(field.name)
             .description(field.description)
+            .description(field.description)
             .arguments(field.arguments.map(this::makeArgument))
             .type(resolveOutputType(field.outputType))
             .build()
@@ -214,13 +207,30 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             .build()
     }
 
+    private fun makeInterface(inter: InterfaceBuilder<*>): GraphQLInterfaceType {
+        val fields = inter.fields.map { field ->
+            makeField(field, inter.name)
+        }
+
+        codeRegistry.typeResolver(inter.name) { env ->
+            env.schema.getObjectType(names[names.keys.find { it == env.getObject<Any?>()::class }])
+        }
+
+        return GraphQLInterfaceType.newInterface()
+            .name(inter.name)
+            .description(inter.description)
+            .fields(fields)
+            .build()
+    }
+
     private fun makeObject(type: TypeBuilder<*>): GraphQLObjectType {
         val fields = type.fields.map { field ->
             makeField(field, type.name)
-        }.toMutableList()
+        }
 
         return GraphQLObjectType.newObject()
             .name(type.name)
+            .description(type.description)
             .fields(fields)
             .withInterfaces(*type.interfaces.map { interfaces[it] }.toTypedArray())
             .build()

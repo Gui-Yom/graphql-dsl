@@ -24,14 +24,20 @@ class TestDsl {
 
             input<Input>()
 
+            !"This describes my Node interface"
             inter<Node> {
                 derive()
 
+                !"Description on a field too !"
                 field("parent") { ->
                     MyId("Node:" + id.inner)
                 }
             }
 
+            !"""
+                This is a cool looking multiline description
+                No need to call .trimIndent()
+            """
             type<MyData> {
                 // TODO specifying interface on a type should automatically declare appropriate fields
                 inter<Node>()

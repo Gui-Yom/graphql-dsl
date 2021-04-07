@@ -4,13 +4,16 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 @DslMarker
 annotation class SchemaDsl
 
+internal val log = LoggerFactory.getLogger(SchemaSpec::class.java)
+
 @SchemaDsl
-class SchemaSpec {
+class SchemaSpec : DescriptionPublisher {
 
     val idTypes = mutableSetOf<KClass<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
@@ -29,13 +32,16 @@ class SchemaSpec {
     var mutation: OperationBuilder<*>? = null
     var subscription: OperationBuilder<*>? = null
 
+    // For the DescriptionPublisher implementation
+    override var nextDesc: String? = null
+
     @SchemaDsl
     inline fun <reified T : Any> scalar(
         name: String,
         coercing: Coercing<T, *>,
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        scalars += ScalarBuilder(name, T::class, coercing, builder)
+        scalars += ScalarBuilder(name, T::class, coercing, takeDesc(), builder)
     }
 
     @SchemaDsl
@@ -49,7 +55,7 @@ class SchemaSpec {
         noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        enums += EnumBuilder(name ?: kclass.simpleName!!, kclass, builder)
+        enums += EnumBuilder(name ?: kclass.simpleName!!, kclass, takeDesc(), builder)
     }
 
     @SchemaDsl
@@ -58,7 +64,7 @@ class SchemaSpec {
         noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        inputs += InputBuilder(name ?: kclass.simpleName!!, kclass, builder)
+        inputs += InputBuilder(name ?: kclass.simpleName!!, kclass, takeDesc(), builder)
     }
 
     @SchemaDsl
@@ -67,7 +73,7 @@ class SchemaSpec {
         configure: InterfaceBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        interfaces += InterfaceBuilder(kclass, name).apply(configure)
+        interfaces += InterfaceBuilder(kclass, name, takeDesc()).apply(configure)
     }
 
     @SchemaDsl
@@ -76,7 +82,7 @@ class SchemaSpec {
         configure: TypeBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        types += TypeBuilder(kclass, name).apply(configure)
+        types += TypeBuilder(kclass, name, takeDesc()).apply(configure)
     }
 
     @SchemaDsl

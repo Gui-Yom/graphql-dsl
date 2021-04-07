@@ -124,10 +124,10 @@ val schema = SchemaGenerator {
 - [x] Enums
 - [x] Special types (CompletableFuture and Publisher)
 - [x] Suspend and Flow support
-- [ ] Complete type checking using reflection (especially interfaces)
 - [x] Suspend in custom fields
 - [ ] Non suspend custom fields
-- [ ] Schema element description
+- [x] Schema element description
+- [ ] Description on field arguments
 - [ ] Directive support
 - [ ] Union types
 - [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)

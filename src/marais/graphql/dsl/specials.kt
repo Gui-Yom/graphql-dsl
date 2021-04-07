@@ -12,18 +12,21 @@ data class ScalarBuilder(
     val name: String,
     val kclass: KClass<*>,
     val coercing: Coercing<*, *>,
+    val description: String?,
     val builder: GraphQLScalarType.Builder.() -> Unit
 )
 
 data class EnumBuilder(
     val name: String,
     val kclass: KClass<*>,
+    val description: String?,
     val builder: GraphQLEnumType.Builder.() -> Unit
 )
 
 data class InputBuilder(
     val name: String,
     val kclass: KClass<*>,
+    val description: String?,
     val builder: GraphQLInputObjectType.Builder.() -> Unit
 ) {
     val fields = mutableListOf<Pair<String, KType>>()
