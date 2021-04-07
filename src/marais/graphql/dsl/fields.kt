@@ -2,9 +2,6 @@ package marais.graphql.dsl
 
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import marais.graphql.generator.functionFetcher
-import marais.graphql.generator.propertyFetcher
-import marais.graphql.generator.representationType
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty1

@@ -3,7 +3,6 @@ package marais.graphql.dsl
 import graphql.GraphQL
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.SchemaPrinter
-import marais.graphql.generator.SchemaGenerator
 import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -16,7 +15,7 @@ class TestDsl {
     @Test
     fun testDsl() {
         val startTime = System.currentTimeMillis()
-        val builder = SchemaGenerator {
+        val builder = SchemaBuilder {
 
             scalar("Url", UrlCoercing)
             id<MyId>()
@@ -79,7 +78,7 @@ class TestDsl {
         val initTime = System.currentTimeMillis() - startTime
         val schema = builder.build()
         val buildTime = System.currentTimeMillis() - startTime
-        log.debug("Schema build time : $buildTime ms (of init : $initTime ms)")
+        log.debug("Schema build time : $buildTime ms (init : $initTime ms)")
 
         log.debug(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
 
@@ -91,7 +90,8 @@ class TestDsl {
                 id,
                 field,
                 dec,
-                inc
+                inc,
+                parent
               },
               otherdata {
                 id,

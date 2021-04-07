@@ -1,4 +1,4 @@
-package marais.graphql.generator
+package marais.graphql.dsl
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow

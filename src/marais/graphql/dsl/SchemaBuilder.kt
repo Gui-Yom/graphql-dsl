@@ -1,96 +1,239 @@
 package marais.graphql.dsl
 
-import graphql.schema.Coercing
-import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLScalarType
+import graphql.Scalars
+import graphql.schema.*
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.full.isSubclassOf
 
-@DslMarker
-annotation class SchemaDsl
+class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
-@SchemaDsl
-class SchemaBuilder {
+    private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
 
-    val idTypes = mutableSetOf<KClass<*>>()
-    val scalars = mutableListOf<ScalarBuilder>()
-    val enums = mutableListOf<EnumBuilder>()
+    private val schemaBuilder = SchemaSpec().apply(configure)
 
-    // Maps a kotlin type to a graphql input type declaration
-    val inputs = mutableListOf<InputBuilder>()
+    // A kotlin class to its mapped graphql type
+    private val names = mutableMapOf<KClass<*>, String>()
 
-    // Maps a kotlin type to a graphql interface declaration
-    val interfaces = mutableListOf<InterfaceBuilder<*>>()
+    private val inputNames = mutableMapOf<KClass<*>, String>()
 
-    // Maps a kotlin type to a graphql type declaration
-    val types = mutableListOf<TypeBuilder<*>>()
+    // Maps kotlin types to graphql types
+    private val scalars = mutableMapOf<KClass<*>, GraphQLScalarType>()
+    private val enums = mutableMapOf<KClass<*>, GraphQLEnumType>()
+    private val inputs = mutableMapOf<KClass<*>, GraphQLInputObjectType>()
+    private val interfaces = mutableMapOf<KClass<*>, GraphQLInterfaceType>()
+    private val types = mutableMapOf<KClass<*>, GraphQLObjectType>()
+    private val codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
 
-    lateinit var query: OperationBuilder<*>
-    var mutation: OperationBuilder<*>? = null
-    var subscription: OperationBuilder<*>? = null
+    /**
+     * Build the schema following the spec
+     */
+    fun build(): GraphQLSchema? {
 
-    @SchemaDsl
-    inline fun <reified T : Any> scalar(
-        name: String,
-        coercing: Coercing<T, *>,
-        noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
-    ) {
-        scalars += ScalarBuilder(name, T::class, coercing, builder)
+        // At this step we should know everything in order to build the schema.
+
+        scalars += schemaBuilder.scalars.map {
+            // Probably unnecessary to put scalars since they don't reference anything else and they're mapped first
+            names[it.kclass] = it.name
+            it.kclass to GraphQLScalarType.newScalar()
+                .name(it.name)
+                .coercing(it.coercing)
+                .apply(it.builder)
+                .build()
+        }
+
+        log.debug("Registered scalars : $scalars")
+
+        enums += schemaBuilder.enums.map {
+            names[it.kclass] = it.name
+            it.kclass to GraphQLEnumType.newEnum()
+                .name(it.name)
+                .apply {
+                    for (enumConstant: Enum<*> in it.kclass.java.enumConstants as Array<Enum<*>>) {
+                        value(enumConstant.name)
+                    }
+                }
+                .build()
+        }
+
+        log.debug("Registered enums : $enums")
+
+        // Early name registration
+        schemaBuilder.inputs.forEach {
+            inputNames[it.kclass] = it.name
+        }
+
+        inputs += schemaBuilder.inputs.map {
+            it.kclass to GraphQLInputObjectType.newInputObject()
+                .name(it.name)
+                .fields(it.fields.map { (name, type) ->
+                    GraphQLInputObjectField.newInputObjectField()
+                        .name(name)
+                        .type(resolveInputType(type))
+                        .build()
+                })
+                .build()
+        }
+
+        // Early name registration
+        schemaBuilder.interfaces.forEach {
+            names[it.kclass] = it.name
+        }
+        // Early name registration
+        schemaBuilder.types.forEach {
+            names[it.kclass] = it.name
+        }
+
+        // Interfaces
+        interfaces += schemaBuilder.interfaces.map { inter ->
+            val fields = inter.fields.map { field ->
+                makeField(field, inter.name)
+            }
+
+            codeRegistry.typeResolver(inter.name) { env ->
+                env.schema.getObjectType(names[names.keys.find { it == env.getObject<Any?>()::class }])
+            }
+
+            inter.kclass to GraphQLInterfaceType.newInterface()
+                .name(inter.name)
+                .fields(fields)
+                .build()
+        }
+
+        log.debug("Registered interfaces : $interfaces")
+
+        // Any other types
+        types += schemaBuilder.types.map {
+
+            // Add default fields from parent interface if not present
+            for (inter in it.interfaces) {
+                for (field in schemaBuilder.interfaces.find { it.kclass == inter }!!.fields) {
+                    // We find every field not implemented by the type.
+                    if (it.fields.find { it.name == field.name } == null) {
+                        it.fields.add(field)
+                    }
+                }
+            }
+
+            it.kclass to makeObject(it)
+        }
+
+        log.debug("Registered types : $types")
+
+        val query = makeOperation(schemaBuilder.query)
+        val mutation = schemaBuilder.mutation?.let { makeOperation(it) }
+        val subscription = schemaBuilder.subscription?.let { makeOperation(it) }
+
+        return GraphQLSchema.newSchema()
+            .additionalTypes(scalars.values.toSet())
+            .additionalTypes(enums.values.toSet())
+            .additionalTypes(inputs.values.toSet())
+            .additionalTypes(interfaces.values.toSet())
+            .additionalTypes(types.values.toSet())
+            .query(query)
+            .mutation(mutation)
+            .subscription(subscription)
+            .codeRegistry(codeRegistry.build())
+            .build()
     }
 
-    @SchemaDsl
-    inline fun <reified T : Any> id() {
-        idTypes += T::class
+    private fun resolveOutputType(type: KType): GraphQLOutputType {
+
+        val kclass = type.classifier as KClass<*>
+
+        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
+            GraphQLList.list(resolveOutputType(type.arguments[0].type!!))
+        } else null
+            ?: resolveInOutType(kclass) as? GraphQLOutputType
+            // Search through what has already been resolved
+            ?: interfaces[kclass] ?: types[kclass]
+            // Fallback to late binding if possible
+            ?: names[kclass]?.let { GraphQLTypeReference(it) }
+            // We won't ever see it
+            ?: throw Exception("Can't resolve $type to a valid graphql type")
+
+        return if (type.isMarkedNullable) {
+            resolved
+        } else
+            GraphQLNonNull.nonNull(resolved)
     }
 
-    @SchemaDsl
-    inline fun <reified T : Enum<T>> enum(
-        name: String? = null,
-        noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
-    ) {
-        val kclass = T::class
-        enums += EnumBuilder(name ?: kclass.simpleName!!, kclass, builder)
+    private fun resolveInputType(type: KType): GraphQLInputType {
+
+        val kclass = type.classifier as KClass<*>
+
+        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
+            GraphQLList.list(resolveInputType(type.arguments[0].type!!))
+        } else null
+            ?: resolveInOutType(kclass) as? GraphQLInputType
+            // Search through what has already been resolved
+            ?: inputs[kclass]
+            // Fallback to late binding if possible
+            ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
+            // We won't ever see it
+            ?: throw Exception("Can't resolve $type to a valid graphql type")
+
+        return if (type.isMarkedNullable) {
+            resolved
+        } else
+            GraphQLNonNull.nonNull(resolved)
     }
 
-    @SchemaDsl
-    inline fun <reified T : Any> input(
-        name: String? = null,
-        noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
-    ) {
-        val kclass = T::class
-        inputs += InputBuilder(name ?: kclass.simpleName!!, kclass, builder)
+    private fun resolveInOutType(kclass: KClass<*>): GraphQLType? {
+        return scalars[kclass] ?: when (kclass) {
+            Int::class -> Scalars.GraphQLInt
+            Short::class -> Scalars.GraphQLInt // default
+            Byte::class -> Scalars.GraphQLInt // default
+            Float::class -> Scalars.GraphQLFloat
+            Double::class -> Scalars.GraphQLFloat // default
+            String::class -> Scalars.GraphQLString
+            Char::class -> Scalars.GraphQLString // default
+            Boolean::class -> Scalars.GraphQLBoolean
+            in schemaBuilder.idTypes -> Scalars.GraphQLID
+            else -> null
+        } ?: enums[kclass]
     }
 
-    @SchemaDsl
-    inline fun <reified T : Any> inter(
-        name: String? = null,
-        configure: InterfaceBuilder<T>.() -> Unit = {}
-    ) {
-        val kclass = T::class
-        interfaces += InterfaceBuilder(kclass, name).apply(configure)
+    private fun makeField(field: Field, parentType: String): GraphQLFieldDefinition {
+        // Register the field data fetcher
+        codeRegistry.dataFetcher(FieldCoordinates.coordinates(parentType, field.name), field.dataFetcher)
+
+        return GraphQLFieldDefinition.newFieldDefinition()
+            .name(field.name)
+            .description(field.description)
+            .arguments(field.arguments.map(this::makeArgument))
+            .type(resolveOutputType(field.outputType))
+            .build()
     }
 
-    @SchemaDsl
-    inline fun <reified T : Any> type(
-        name: String? = null,
-        configure: TypeBuilder<T>.() -> Unit = {}
-    ) {
-        val kclass = T::class
-        types += TypeBuilder(kclass, name).apply(configure)
+    private fun makeArgument(argument: Argument): GraphQLArgument {
+        return GraphQLArgument.newArgument()
+            .name(argument.name)
+            .type(resolveInputType(argument.type))
+            .build()
     }
 
-    @SchemaDsl
-    fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.query = OperationBuilder("Query", query).apply(configure)
+    private fun makeObject(type: TypeBuilder<*>): GraphQLObjectType {
+        val fields = type.fields.map { field ->
+            makeField(field, type.name)
+        }.toMutableList()
+
+        return GraphQLObjectType.newObject()
+            .name(type.name)
+            .fields(fields)
+            .withInterfaces(*type.interfaces.map { interfaces[it] }.toTypedArray())
+            .build()
     }
 
-    @SchemaDsl
-    fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.mutation = OperationBuilder("Mutation", query).apply(configure)
-    }
+    private fun makeOperation(operation: Type<*>): GraphQLObjectType {
+        val fields = operation.fields.map { field ->
+            makeField(field, operation.name)
+        }
 
-    @SchemaDsl
-    fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.subscription = OperationBuilder("Subscription", query).apply(configure)
+        return GraphQLObjectType.newObject()
+            .name(operation.name)
+            .fields(fields)
+            .build()
     }
 }

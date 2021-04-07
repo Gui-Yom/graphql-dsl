@@ -1,4 +1,4 @@
-package marais.graphql.generator
+package marais.graphql.dsl
 
 import graphql.TrivialDataFetcher
 import graphql.schema.DataFetcher
@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.reactive.asPublisher
-import marais.graphql.dsl.Argument
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KFunction

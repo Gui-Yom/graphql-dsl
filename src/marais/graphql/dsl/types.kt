@@ -1,7 +1,6 @@
 package marais.graphql.dsl
 
 import graphql.schema.StaticDataFetcher
-import marais.graphql.generator.*
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -12,7 +11,7 @@ import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
-private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
+private val log = LoggerFactory.getLogger(SchemaSpec::class.java)
 
 @SchemaDsl
 sealed class Type<R : Any>(val name: String) {
