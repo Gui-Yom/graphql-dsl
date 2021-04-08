@@ -10,15 +10,15 @@ runtime then include it at the next compilation.
 
 ```kotlin
 
-abstract class Node(val id: String)
+abstract class Node(open val id: MyId)
 
-class Foo(id: String, val field: Int) : Node(id) {
+class Foo(id: MyId, val field: Int) : Node(id) {
     fun dec(): Int = field - 1
 }
 
-class Bar(id: String, val field: URL) : Node(id) {
+data class Bar(override val id: MyId, val field: URL) : Node(id) {
 
-    fun other(param: String): String = param
+    fun additional(param: String): String = param
 }
 
 object UrlCoercing : Coercing<URL, String> {
@@ -48,13 +48,25 @@ enum class Baz {
 
 data class Input(val a: String)
 
+data class MyId(val inner: String) {
+    override fun toString(): String = inner
+}
+
 object Query {
-    val data = MyData("69420", 42)
-    val otherdata = OtherData("42069", URL("http://localhost:8080"))
+    val foo = Foo(MyId("69420"), 42)
+    val bar = Bar(MyId("42069"), URL("http://localhost:8080"))
 
-    fun node() = if (Random.nextBoolean()) data else otherdata
+    fun node() = if (Random.nextBoolean()) foo else bar
 
-    suspend fun suspending() = 42
+    fun foo() = foo
+
+    fun bar() = bar
+
+    suspend fun suspendFun() = 42
+
+    fun futureFun(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
+
+    fun deferedFun(): Deferred<Int> = CompletableDeferred(42)
 }
 
 // Access the DSL
@@ -63,6 +75,9 @@ val schema = SchemaGenerator {
     // Define a scalar type given its Coercing implementation
     scalar("Url", UrlCoercing)
 
+    // Declare MyId as a graphql ID scalar
+    id<MyId>()
+
     // Define an enum directly based on its values
     enum<Baz>()
 
@@ -70,25 +85,33 @@ val schema = SchemaGenerator {
     input<Input>()
 
     // Define an interface backed by a kotlin interface / abstract class / sealed class
+    !"This describes my Node interface"
     inter<Node> {
         derive()
+
+        // Additional fields will be implemented by default on implementing types
+        !"Description on a field too !"
+        field("parent") { ->
+            MyId("Node:" + id.inner)
+        }
     }
 
     // Define a type backed by a kotlin class
+    !"""
+        This is a cool looking multiline description
+        No need to call .trimIndent()
+    """
     type<Foo> {
-        // Explicitly register that type to extend the given interface
-        // Warning : you must manually include the fields required by the interface or use derive()
-        // Warning : will probably change since not very ergonomic
+        // TODO specifying interface on a type should automatically declare appropriate fields
         inter<Node>()
 
-        // Register fields on this type
-        // Can be a class property
-        field(Foo::id)
+        // Can be a property
+        include(Foo::id)
         // Can be a member function
-        field(Foo::dec)
-        // Can be a custom field
-        // Note the special argument here, it won't be included in the schema
-        field("inc") { it: DataFetchingEnvironment ->
+        include(Foo::dec)
+        include(Foo::field)
+        // Can be a custom function
+        field("inc") { _: DataFetchingEnvironment ->
             field + 1
         }
     }
@@ -96,14 +119,21 @@ val schema = SchemaGenerator {
     type<Bar> {
         inter<Node>()
 
-        // Automatically generate graphql fields based on public class properties and functions
+        // Automatically include properties and member functions
         derive()
 
-        // When using derive(), you can exclude fields you don't want
-        exclude(Bar::other)
+        // Exclude a field
+        -Bar::field
 
-        // Custom fields can have any number of arguments
-        field("custom") { a: Int, b: Float, c: String ->
+        field("custom") { param: String ->
+            param
+        }
+
+        field("custom2") { a: List<Int>, b: Int ->
+            a.map { it * b }
+        }
+
+        field("custom3") { a: Int, b: Float, c: MyId ->
             "$c: ${a * b}"
         }
     }
@@ -127,7 +157,6 @@ val schema = SchemaGenerator {
 - [x] Suspend in custom fields
 - [ ] Non suspend custom fields
 - [x] Schema element description
-- [ ] Description on field arguments
 - [ ] Directive support
 - [ ] Union types
 - [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)

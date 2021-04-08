@@ -20,7 +20,7 @@ class TestDsl {
             scalar("Url", UrlCoercing)
             id<MyId>()
 
-            enum<MyEnum>()
+            enum<Baz>()
 
             input<Input>()
 
@@ -38,32 +38,32 @@ class TestDsl {
                 This is a cool looking multiline description
                 No need to call .trimIndent()
             """
-            type<MyData> {
+            type<Foo> {
                 // TODO specifying interface on a type should automatically declare appropriate fields
                 inter<Node>()
 
                 // Can be a property
-                include(MyData::id)
+                include(Foo::id)
                 // Can be a member function
-                include(MyData::dec)
+                include(Foo::dec)
                 assertFailsWith<Exception>("We already included that field with the same name") {
-                    include(MyData::dec)
+                    include(Foo::dec)
                 }
-                include(MyData::field)
+                include(Foo::field)
                 // Can be a custom function
                 field("inc") { _: DataFetchingEnvironment ->
                     field + 1
                 }
             }
 
-            type<OtherData> {
+            type<Bar> {
                 inter<Node>()
 
                 derive()
 
-                -OtherData::field
+                -Bar::field
                 assertFailsWith<Exception>("We already removed this field") {
-                    exclude(OtherData::field)
+                    exclude(Bar::field)
                 }
 
                 field("custom") { param: String ->
@@ -92,14 +92,14 @@ class TestDsl {
         val result = graphql.execute(
             """
             query {
-              data {
+              foo {
                 id,
                 field,
                 dec,
                 inc,
                 parent
               },
-              otherdata {
+              bar {
                 id,
                 custom(param: "hello"),
                 custom2(a: [1, 2, 3], b: 4)
@@ -107,12 +107,12 @@ class TestDsl {
               node {
                 id,
                 parent,
-                ... on MyData { value: field },
-                ... on OtherData { custom(param: "hello") }
+                ... on Foo { value: field },
+                ... on Bar { custom(param: "hello") }
               },
-              testSuspend,
-              testDeferred,
-              testFuture
+              suspendFun,
+              deferedFun,
+              futureFun
             }
         """.trimIndent()
         )

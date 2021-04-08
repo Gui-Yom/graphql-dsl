@@ -12,11 +12,11 @@ import kotlin.random.Random
 
 abstract class Node(open val id: MyId)
 
-class MyData(id: MyId, val field: Int) : Node(id) {
+class Foo(id: MyId, val field: Int) : Node(id) {
     fun dec(): Int = field - 1
 }
 
-data class OtherData(override val id: MyId, val field: URL) : Node(id) {
+data class Bar(override val id: MyId, val field: URL) : Node(id) {
 
     fun additional(param: String): String = param
 }
@@ -40,7 +40,7 @@ object UrlCoercing : Coercing<URL, String> {
     }
 }
 
-enum class MyEnum {
+enum class Baz {
     VALUE0,
     VALUE1,
     VALUE2
@@ -53,18 +53,18 @@ data class MyId(val inner: String) {
 }
 
 object Query {
-    val data = MyData(MyId("69420"), 42)
-    val otherdata = OtherData(MyId("42069"), URL("http://localhost:8080"))
+    val foo = Foo(MyId("69420"), 42)
+    val bar = Bar(MyId("42069"), URL("http://localhost:8080"))
 
-    fun node() = if (Random.nextBoolean()) data else otherdata
+    fun node() = if (Random.nextBoolean()) foo else bar
 
-    fun data() = data
+    fun foo() = foo
 
-    fun otherdata() = otherdata
+    fun bar() = bar
 
-    suspend fun testSuspend() = 42
+    suspend fun suspendFun() = 42
 
-    fun testFuture(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
+    fun futureFun(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
 
-    fun testDeferred(): Deferred<Int> = CompletableDeferred(42)
+    fun deferedFun(): Deferred<Int> = CompletableDeferred(42)
 }

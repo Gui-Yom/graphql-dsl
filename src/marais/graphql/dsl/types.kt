@@ -104,6 +104,7 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     internal fun derive(kclass: KClass<R>, instance: R?) {
         deriveProperties(kclass, instance)
         deriveFunctions(kclass, instance)
+        // FIXME handle the case where a property and a function with the same name exist
     }
 
     internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
