@@ -157,9 +157,10 @@ val schema = SchemaGenerator {
 - [x] Suspend in custom fields
 - [ ] Non suspend custom fields
 - [x] Schema element description
+- [ ] Field argument default value (I don't think kotlin allows us to see that)
 - [ ] Directive support
 - [ ] Union types
 - [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)
 - [ ] Relay types builder (connection, edge, pageinfo), similar to graphql-java's relay helpers
 - [ ] Ensure that as many checks as possible are done during the first step of schema building so errors are thrown with
-  a useful line number
+  a useful line number (fail fast, maybe change the way the schema is generated)

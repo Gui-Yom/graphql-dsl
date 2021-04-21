@@ -10,12 +10,14 @@ import kotlin.reflect.KClass
 @DslMarker
 annotation class SchemaDsl
 
+typealias IdConverter<T> = (value: String?) -> T?
+
 internal val log = LoggerFactory.getLogger(SchemaSpec::class.java)
 
 @SchemaDsl
 class SchemaSpec : DescriptionPublisher {
 
-    val idTypes = mutableSetOf<KClass<*>>()
+    val idTypes = mutableMapOf<KClass<*>, IdConverter<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
     val enums = mutableListOf<EnumBuilder>()
 
@@ -44,9 +46,15 @@ class SchemaSpec : DescriptionPublisher {
         scalars += ScalarBuilder(name, T::class, coercing, takeDesc(), builder)
     }
 
+    /**
+     * Use the given class as the GraphQL ID
+     *
+     * @param converter since graphql will parse the field as a string we need a
+     *                  manual conversion to our type to coerce it in input position
+     */
     @SchemaDsl
-    inline fun <reified T : Any> id() {
-        idTypes += T::class
+    inline fun <reified T : Any> id(noinline converter: IdConverter<T>) {
+        idTypes += T::class to converter
     }
 
     @SchemaDsl
@@ -73,7 +81,7 @@ class SchemaSpec : DescriptionPublisher {
         configure: InterfaceBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        interfaces += InterfaceBuilder(kclass, name, takeDesc()).apply(configure)
+        interfaces += InterfaceBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
     }
 
     @SchemaDsl
@@ -82,21 +90,21 @@ class SchemaSpec : DescriptionPublisher {
         configure: TypeBuilder<T>.() -> Unit = {}
     ) {
         val kclass = T::class
-        types += TypeBuilder(kclass, name, takeDesc()).apply(configure)
+        types += TypeBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
     }
 
     @SchemaDsl
     fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.query = OperationBuilder("Query", query).apply(configure)
+        this.query = OperationBuilder("Query", query, idTypes).apply(configure)
     }
 
     @SchemaDsl
     fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.mutation = OperationBuilder("Mutation", query).apply(configure)
+        this.mutation = OperationBuilder("Mutation", query, idTypes).apply(configure)
     }
 
     @SchemaDsl
     fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit) {
-        this.subscription = OperationBuilder("Subscription", query).apply(configure)
+        this.subscription = OperationBuilder("Subscription", query, idTypes).apply(configure)
     }
 }

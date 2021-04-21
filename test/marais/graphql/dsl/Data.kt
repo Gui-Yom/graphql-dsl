@@ -67,4 +67,6 @@ object Query {
     fun futureFun(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
 
     fun deferedFun(): Deferred<Int> = CompletableDeferred(42)
+
+    fun acceptId(id: MyId): String = "ok"
 }

@@ -2,10 +2,7 @@ package marais.graphql.dsl
 
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
-import kotlin.reflect.KProperty1
-import kotlin.reflect.KType
+import kotlin.reflect.*
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.valueParameters
 
@@ -16,9 +13,13 @@ sealed class Field(val name: String, val description: String? = null) {
     abstract val outputType: KType
 }
 
-data class Argument(val name: String, val type: KType) {
+data class Argument(val name: String, val type: KType, val inputCoercer: IdConverter<*>?) {
 
-    constructor(param: KParameter) : this(param.name ?: "anon", param.type)
+    constructor(param: KParameter, inputCoercers: Map<KClass<*>, IdConverter<*>>) : this(
+        param.name ?: "anon",
+        param.type,
+        inputCoercers[param.type.classifier as KClass<*>]
+    )
 
     companion object {
         val envType = DataFetchingEnvironment::class.createType()
@@ -28,10 +29,17 @@ data class Argument(val name: String, val type: KType) {
         return if (type == envType) {
             env as T
         } else {
-            env.getArgument(name)
+            if (inputCoercer != null) {
+                inputCoercer.invoke(env.getArgument(name)) as T
+            } else {
+                env.getArgument(name)
+            }
         }
     }
 
+    /**
+     * @return true if this argument is of a type that should not be exposed on the schema
+     */
     fun isSpecialType() = type == envType
 }
 
@@ -60,7 +68,8 @@ class FunctionField<R>(
     val func: KFunction<Any?>,
     name: String,
     description: String? = null,
-    instance: R? = null
+    instance: R? = null,
+    inputCoercers: Map<KClass<*>, IdConverter<*>>
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.representationType()
@@ -71,7 +80,7 @@ class FunctionField<R>(
 
     init {
         for (it in func.valueParameters) {
-            val arg = Argument(it)
+            val arg = Argument(it, inputCoercers)
             funcArgs += arg
             if (!arg.isSpecialType())
                 arguments += arg

@@ -18,7 +18,9 @@ class TestDsl {
         val builder = SchemaBuilder {
 
             scalar("Url", UrlCoercing)
-            id<MyId>()
+            id<MyId> {
+                it?.let { MyId(it) }
+            }
 
             enum<Baz>()
 
@@ -112,7 +114,8 @@ class TestDsl {
               },
               suspendFun,
               deferedFun,
-              futureFun
+              futureFun,
+              acceptId(id: "yay")
             }
         """.trimIndent()
         )

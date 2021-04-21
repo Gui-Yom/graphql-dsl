@@ -11,7 +11,11 @@ import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
 @SchemaDsl
-sealed class Type<R : Any>(val name: String, val description: String? = null) : DescriptionPublisher {
+sealed class Type<R : Any>(
+    val name: String,
+    val description: String? = null,
+    val inputCoercers: Map<KClass<*>, IdConverter<*>>
+) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
 
     // For the DescriptionPublisher implementation
@@ -48,7 +52,7 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         if (fields.containsWithName(name))
             throw Exception("A field with this name is already included")
-        fields += FunctionField<R>(func, name, takeDesc())
+        fields += FunctionField<R>(func, name, takeDesc(), inputCoercers = inputCoercers)
     }
 
     /**
@@ -118,7 +122,7 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
         for (member in kclass.memberFunctions) {
             if (isValidFunctionDerive(member.name)) {
                 log.debug("found function : $member")
-                fields += FunctionField(member, member.name, instance = instance)
+                fields += FunctionField(member, member.name, instance = instance, inputCoercers = inputCoercers)
             }
         }
     }
@@ -152,7 +156,7 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -173,8 +177,8 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -196,9 +200,9 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -221,10 +225,10 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -248,11 +252,11 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
-        val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg4 = Argument(reflected.valueParameters[4], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -277,12 +281,12 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0]).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1]).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2]).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3]).also { if (!it.isSpecialType()) args += it }
-        val arg4 = Argument(reflected.valueParameters[4]).also { if (!it.isSpecialType()) args += it }
-        val arg5 = Argument(reflected.valueParameters[5]).also { if (!it.isSpecialType()) args += it }
+        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg4 = Argument(reflected.valueParameters[4], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg5 = Argument(reflected.valueParameters[5], inputCoercers).also { if (!it.isSpecialType()) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -302,8 +306,13 @@ sealed class Type<R : Any>(val name: String, val description: String? = null) : 
     }
 }
 
-class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null, description: String? = null) :
-    Type<R>(name ?: kclass.simpleName!!, description) {
+class InterfaceBuilder<R : Any>(
+    val kclass: KClass<R>,
+    name: String? = null,
+    description: String? = null,
+    inputCoercers: Map<KClass<*>, IdConverter<*>>
+) :
+    Type<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForInterface(kclass))
@@ -318,8 +327,13 @@ class InterfaceBuilder<R : Any>(val kclass: KClass<R>, name: String? = null, des
     }
 }
 
-class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?, description: String? = null) :
-    Type<R>(name ?: kclass.simpleName!!, description) {
+class TypeBuilder<R : Any>(
+    val kclass: KClass<R>,
+    name: String?,
+    description: String? = null,
+    inputCoercers: Map<KClass<*>, IdConverter<*>>
+) :
+    Type<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForType(kclass))
@@ -345,7 +359,8 @@ class TypeBuilder<R : Any>(val kclass: KClass<R>, name: String?, description: St
     }
 }
 
-class OperationBuilder<R : Any>(name: String, val instance: R) : Type<R>(name) {
+class OperationBuilder<R : Any>(name: String, val instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
+    Type<R>(name, inputCoercers = inputCoercers) {
 
     /**
      * Include fields based on properties and functions present in the backing class.

@@ -22,6 +22,8 @@ fun <R, O> propertyFetcher(property: KProperty1<R, O>, receiver: R? = null): Dat
         ?: PropertyDataFetcher.fetching(property.getter)
 }
 
+// TODO Since we know types at compile time, mapping could be done statically instead of inside the DataFetcher
+
 /**
  * The graphql engine accepts simple values, CompletableFuture and Publisher, we map any types to those
  */
@@ -45,7 +47,7 @@ fun functionFetcher(
     receiver: Any? = null
 ): DataFetcher<Any?> {
     return if (func.isSuspend) {
-        suspendFetcher { env ->
+        suspendFetcher(scope, context) { env ->
             func.callSuspend(
                 receiver ?: env.getSource(),
                 *args.map {
@@ -55,12 +57,14 @@ fun functionFetcher(
         }
     } else {
         DataFetcher { env ->
-            transformResult(func.call(
-                receiver ?: env.getSource(),
-                *args.map {
-                    it.resolve<Any>(env)
-                }.toTypedArray()
-            ), context)
+            transformResult(
+                func.call(
+                    receiver ?: env.getSource(),
+                    *args.map {
+                        it.resolve<Any>(env)
+                    }.toTypedArray()
+                ), context
+            )
         }
     }
 }
