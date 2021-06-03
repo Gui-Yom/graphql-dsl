@@ -7,13 +7,13 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
 }
 
 val kotlinVersion: String by project
 val ktxCoroutinesVersion: String by project
 val reactiveStreamsVersion: String by project
 val slf4jVersion: String by project
+val logbackVersion: String by project
 val gqlVersion: String by project
 val junitVersion: String by project
 
@@ -38,7 +38,7 @@ dependencies {
 
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.2.3")
+    testRuntimeOnly("ch.qos.logback:logback-classic:$logbackVersion")
 }
 
 sourceSets {
@@ -65,7 +65,6 @@ java {
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            useIR = true
             jvmTarget = JavaVersion.VERSION_11.toString()
         }
     }
