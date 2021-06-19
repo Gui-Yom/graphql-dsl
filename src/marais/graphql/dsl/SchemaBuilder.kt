@@ -236,7 +236,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             .build()
     }
 
-    private fun makeOperation(operation: Type<*>): GraphQLObjectType {
+    private fun makeOperation(operation: OperationBuilder<*>): GraphQLObjectType {
         val fields = operation.fields.map { field ->
             makeField(field, operation.name)
         }

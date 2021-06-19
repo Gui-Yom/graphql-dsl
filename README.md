@@ -152,7 +152,7 @@ val schema = SchemaGenerator {
 - [x] Field arguments
 - [x] Input objects
 - [x] Enums
-- [x] Special types (CompletableFuture and Publisher)
+- [x] CompletableFuture and Publisher support
 - [x] Suspend and Flow support
 - [x] Suspend in custom fields
 - [ ] Non suspend custom fields

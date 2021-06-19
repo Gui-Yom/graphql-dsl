@@ -6,12 +6,12 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
-import kotlin.reflect.typeOf
 
 @SchemaDsl
-sealed class Type<R : Any>(
+sealed class BaseTypeBuilder<R : Any>(
     val name: String,
     val description: String? = null,
     val inputCoercers: Map<KClass<*>, IdConverter<*>>
@@ -24,9 +24,9 @@ sealed class Type<R : Any>(
     /**
      * Include a field from a static value. No computations, a plain static value that won't ever change.
      */
-    @ExperimentalStdlibApi
     inline fun <reified T : Any> static(name: String, value: T) {
-        fields += CustomField(name, null, typeOf<T>(), emptyList(), StaticDataFetcher(value))
+        // TODO Use typeOf() here when stabilized
+        fields += CustomField(name, null, T::class.starProjectedType, emptyList(), StaticDataFetcher(value))
     }
 
     /**
@@ -311,8 +311,7 @@ class InterfaceBuilder<R : Any>(
     name: String? = null,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) :
-    Type<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForInterface(kclass))
@@ -332,8 +331,7 @@ class TypeBuilder<R : Any>(
     name: String?,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) :
-    Type<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForType(kclass))
@@ -354,13 +352,13 @@ class TypeBuilder<R : Any>(
      */
     @SchemaDsl
     inline fun <reified I : Any> inter() {
-        // TODO should we check that R : I
+        // TODO we should check that R : I
         interfaces += I::class
     }
 }
 
 class OperationBuilder<R : Any>(name: String, val instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
-    Type<R>(name, inputCoercers = inputCoercers) {
+    BaseTypeBuilder<R>(name, inputCoercers = inputCoercers) {
 
     /**
      * Include fields based on properties and functions present in the backing class.
