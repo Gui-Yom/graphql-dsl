@@ -12,7 +12,8 @@ import kotlin.reflect.jvm.reflect
 
 @SchemaDsl
 sealed class BaseTypeBuilder<R : Any>(
-    val name: String,
+    val kclass: KClass<R>,
+    val name: String = kclass.simpleName!!,
     val description: String? = null,
     val inputCoercers: Map<KClass<*>, IdConverter<*>>
 ) : DescriptionPublisher {
@@ -71,6 +72,8 @@ sealed class BaseTypeBuilder<R : Any>(
 
     /**
      * Exclude all field originating from a class property.
+     *
+     * @throws Exception if this property wasn't included
      */
     fun exclude(prop: KProperty1<R, *>) {
         if (!fields.removeIf {
@@ -82,6 +85,8 @@ sealed class BaseTypeBuilder<R : Any>(
 
     /**
      * Exclude all field originating from a class function.
+     *
+     * @throws Exception if this function wasn't included
      */
     fun exclude(func: KFunction<*>) {
         if (!fields.removeIf {
@@ -92,7 +97,22 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     /**
+     * Exclude all fields with the given name.
+     *
+     * @throws Exception if no field exists with this name
+     */
+    fun exclude(name: String) {
+        if (!fields.removeIf {
+                if (it is FunctionField<*>) {
+                    it.name == name
+                } else false
+            }) throw Exception("Trying to remove a field that's not included")
+    }
+
+    /**
      * Exclude all field originating from a class property.
+     *
+     * @throws Exception if this property wasn't included
      */
     operator fun KProperty1<R, *>.unaryMinus() {
         exclude(this)
@@ -100,8 +120,19 @@ sealed class BaseTypeBuilder<R : Any>(
 
     /**
      * Exclude all field originating from a class function.
+     *
+     * @throws Exception if this function wasn't included
      */
     operator fun KFunction<*>.unaryMinus() {
+        exclude(this)
+    }
+
+    /**
+     * Exclude all fields with the given name.
+     *
+     * @throws Exception if no field exists with this name
+     */
+    operator fun String.unaryMinus() {
         exclude(this)
     }
 
@@ -125,6 +156,24 @@ sealed class BaseTypeBuilder<R : Any>(
                 fields += FunctionField(member, member.name, instance = instance, inputCoercers = inputCoercers)
             }
         }
+    }
+
+    /**
+     * Include fields based on properties and functions present in the backing class.
+     */
+    @SchemaDsl
+    open fun derive() {
+        derive(kclass, null)
+    }
+
+    @SchemaDsl
+    fun deriveProperties() {
+        deriveProperties(kclass, null)
+    }
+
+    @SchemaDsl
+    fun deriveFunctions() {
+        deriveFunctions(kclass, null)
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
@@ -307,45 +356,32 @@ sealed class BaseTypeBuilder<R : Any>(
 }
 
 class InterfaceBuilder<R : Any>(
-    val kclass: KClass<R>,
+    kclass: KClass<R>,
     name: String? = null,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForInterface(kclass))
     }
-
-    /**
-     * Include fields based on properties and functions present in the backing class.
-     */
-    @SchemaDsl
-    fun derive() {
-        super.derive(kclass, null)
-    }
 }
 
 class TypeBuilder<R : Any>(
-    val kclass: KClass<R>,
+    kclass: KClass<R>,
     name: String?,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(isValidClassForType(kclass))
     }
 
-    val interfaces = mutableListOf<KClass<*>>()
-
     /**
-     * Include fields based on properties and functions present in the backing class.
+     * Interfaces implemented by this type
      */
-    @SchemaDsl
-    fun derive() {
-        super.derive(kclass, null)
-    }
+    val interfaces = mutableListOf<KClass<*>>()
 
     /**
      * Declare this type as implementing another interface.
@@ -358,14 +394,17 @@ class TypeBuilder<R : Any>(
 }
 
 class OperationBuilder<R : Any>(name: String, val instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
-    BaseTypeBuilder<R>(name, inputCoercers = inputCoercers) {
+    BaseTypeBuilder<R>(instance::class as KClass<R>, name, inputCoercers = inputCoercers) {
+
+    init {
+        require(isValidClassForType(kclass))
+    }
 
     /**
      * Include fields based on properties and functions present in the backing class.
      */
     @SchemaDsl
-    fun derive() {
-        val kclass = instance::class
-        super.derive(kclass as KClass<R>, instance)
+    override fun derive() {
+        super.derive(kclass, instance)
     }
 }
