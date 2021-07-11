@@ -9,68 +9,7 @@ runtime then include it at the next compilation.
 ## Example
 
 ```kotlin
-
-abstract class Node(open val id: MyId)
-
-class Foo(id: MyId, val field: Int) : Node(id) {
-    fun dec(): Int = field - 1
-}
-
-data class Bar(override val id: MyId, val field: URL) : Node(id) {
-
-    fun additional(param: String): String = param
-}
-
-object UrlCoercing : Coercing<URL, String> {
-    override fun serialize(dataFetcherResult: Any): String {
-        return dataFetcherResult.toString()
-    }
-
-    override fun parseValue(input: Any): URL =
-        if (input is StringValue) try {
-            URL(input.value)
-        } catch (e: Exception) {
-            throw CoercingParseValueException(e)
-        } else throw CoercingParseValueException("Expected a StringValue for Url")
-
-    override fun parseLiteral(input: Any): URL = try {
-        URL(input as String)
-    } catch (e: Exception) {
-        throw CoercingParseLiteralException(e)
-    }
-}
-
-enum class Baz {
-    VALUE0,
-    VALUE1,
-    VALUE2
-}
-
-data class Input(val a: String)
-
-data class MyId(val inner: String) {
-    override fun toString(): String = inner
-}
-
-object Query {
-    val foo = Foo(MyId("69420"), 42)
-    val bar = Bar(MyId("42069"), URL("http://localhost:8080"))
-
-    fun node() = if (Random.nextBoolean()) foo else bar
-
-    fun foo() = foo
-
-    fun bar() = bar
-
-    suspend fun suspendFun() = 42
-
-    fun futureFun(): CompletableFuture<Int> = CompletableFuture.completedFuture(42)
-
-    fun deferedFun(): Deferred<Int> = CompletableDeferred(42)
-}
-
-// Access the DSL
-val schema = SchemaGenerator {
+val schema = SchemaBuilder {
 
     // Define a scalar type given its Coercing implementation
     scalar("Url", UrlCoercing)
@@ -84,7 +23,7 @@ val schema = SchemaGenerator {
     // Define an input type
     input<Input>()
 
-    // Define an interface backed by a kotlin interface / abstract class / sealed class
+    // Define an interface backed by a kotlin interface / abstract class / sealed class / open class
     !"This describes my Node interface"
     inter<Node> {
         derive()
@@ -99,7 +38,7 @@ val schema = SchemaGenerator {
     // Define a type backed by a kotlin class
     !"""
         This is a cool looking multiline description
-        No need to call .trimIndent()
+        No need to .trimIndent()
     """
     type<Foo> {
         inter<Node>()
@@ -107,8 +46,9 @@ val schema = SchemaGenerator {
         // Can be a property
         include(Foo::id)
         // Can be a member function
-        include(Foo::dec)
-        include(Foo::field)
+        // We can rename fields too
+        include(Foo::dec, "decrement")
+        +Foo::field
         // Can be a custom function
         field("inc") { _: DataFetchingEnvironment ->
             field + 1
@@ -139,14 +79,18 @@ val schema = SchemaGenerator {
 
     // The main query object
     // Specify root query fields here
+    // Here we derive our root query object from a kotlin object
+    // object Query {
+    //   fun allFoos(): List<Foo> = ...
+    // }
     query(Query) { derive() }
-  
-    // Extra note
+
+    // Also
     type<Bar>()
     // is equivalent to
     type<Bar> { derive() }
     // Same with every other type builders
-}.build()
+}.build() // Returns a ready to use GraphQLSchema
 ```
 
 ## Features
@@ -164,7 +108,8 @@ val schema = SchemaGenerator {
 - [x] Schema element description (partial)
 - [ ] Schema element description on derived fields
 - [ ] Field argument default value (I don't think kotlin allows us to see that)
-- [ ] Automatic Map type conversion to GraphQL List of object
+- [ ] Automatic Map type conversion to GraphQL List of Map entry, including map entry monomorphization
+- [ ] Support custom map conversions (name, key name, value name)
 - [ ] Directive support
 - [ ] Union types
 - [ ] Relay types builder (connection, edge, pageinfo), similar to graphql-java's relay helpers
