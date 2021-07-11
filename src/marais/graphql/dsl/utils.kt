@@ -9,12 +9,20 @@ import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 
-internal fun isValidClassForType(kclass: KClass<*>): Boolean {
-    return !(kclass.isSealed || kclass.isAbstract)
+operator fun List<Field>.contains(name: String): Boolean {
+    for (field in this) {
+        if (field.name == name)
+            return true
+    }
+    return false
 }
 
-internal fun isValidClassForInterface(kclass: KClass<*>): Boolean {
-    return kclass.isSealed || kclass.isAbstract || kclass.isOpen
+internal fun KClass<*>.isValidClassForType(): Boolean {
+    return !(isSealed || isAbstract)
+}
+
+internal fun KClass<*>.isValidClassForInterface(): Boolean {
+    return isSealed || isAbstract || isOpen
 }
 
 /**
@@ -25,10 +33,10 @@ internal val invalidFunctionName = listOf("equals", "hashCode", "toString", "cop
 internal val componentPattern = Regex("component[0-9]+")
 
 /**
- * The functions we do not include automatically while deriving
+ * Blacklist known functions that are not ok in a schema
  */
-internal fun isValidFunctionDerive(name: String): Boolean {
-    return name !in invalidFunctionName && !componentPattern.matches(name)
+internal fun String.isValidFunctionForDerive(): Boolean {
+    return this !in invalidFunctionName && !componentPattern.matches(this)
 }
 
 internal val flowType = Flow::class.createType(listOf(KTypeProjection.STAR))
@@ -38,12 +46,18 @@ internal val publisherType = Publisher::class.createType(listOf(KTypeProjection.
 
 internal fun KType.isFlow(): Boolean = classifier == flowType.classifier
 
-internal fun KType.isValidContainer(): Boolean {
-    return isFlow() || classifier == deferredType.classifier || classifier == futureType.classifier || classifier == publisherType.classifier
+internal fun KType.isAsyncType(): Boolean {
+    return isFlow()
+            || classifier == deferredType.classifier
+            || classifier == futureType.classifier
+            || classifier == publisherType.classifier
 }
 
+/**
+ * Returns the first type argument, this won't check if that class is an actual container
+ */
 internal fun KType.unwrap(): KType = arguments[0].type!!
 
-internal fun KType.representationType(): KType = if (isValidContainer()) unwrap() else this
+internal fun KType.unwrapAsyncType(): KType = if (isAsyncType()) unwrap() else this
 
 internal fun KType.name(): String = (classifier!! as KClass<*>).simpleName!!

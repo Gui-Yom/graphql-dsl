@@ -38,7 +38,7 @@ sealed class BaseTypeBuilder<R : Any>(
         property: KProperty1<R, O>,
         name: String = property.name
     ) {
-        if (fields.containsWithName(name))
+        if (name in fields)
             throw Exception("A field with this name is already included")
         fields += PropertyField(property, name, takeDesc())
     }
@@ -51,7 +51,7 @@ sealed class BaseTypeBuilder<R : Any>(
         func: KFunction<O>,
         name: String = func.name,
     ) {
-        if (fields.containsWithName(name))
+        if (name in fields)
             throw Exception("A field with this name is already included")
         fields += FunctionField<R>(func, name, takeDesc(), inputCoercers = inputCoercers)
     }
@@ -144,15 +144,15 @@ sealed class BaseTypeBuilder<R : Any>(
 
     internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
         for (member in kclass.memberProperties) {
-            log.debug("found property : $member")
+            log.debug("[derive] ${name}[${kclass.qualifiedName}] property ${member.name}: ${member.returnType}")
             fields += PropertyField(member, member.name, instance = instance)
         }
     }
 
     internal fun deriveFunctions(kclass: KClass<R>, instance: R?) {
         for (member in kclass.memberFunctions) {
-            if (isValidFunctionDerive(member.name)) {
-                log.debug("found function : $member")
+            if (member.name.isValidFunctionForDerive()) {
+                log.debug("[derive] ${name}[${kclass.qualifiedName}] function ${member.name}: ${member.returnType}")
                 fields += FunctionField(member, member.name, instance = instance, inputCoercers = inputCoercers)
             }
         }
@@ -187,7 +187,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             emptyList(),
             suspendFetcher {
                 resolver(
@@ -209,7 +209,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -231,7 +231,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -255,7 +255,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -281,7 +281,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -309,7 +309,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -339,7 +339,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fields += CustomField(
             name,
             takeDesc(),
-            reflected.returnType.representationType(),
+            reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
                 resolver(
@@ -363,7 +363,7 @@ class InterfaceBuilder<R : Any>(
 ) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
-        require(isValidClassForInterface(kclass))
+        require(kclass.isValidClassForInterface())
     }
 }
 
@@ -375,7 +375,7 @@ class TypeBuilder<R : Any>(
 ) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
-        require(isValidClassForType(kclass))
+        require(kclass.isValidClassForType())
     }
 
     /**
@@ -397,7 +397,7 @@ class OperationBuilder<R : Any>(name: String, val instance: R, inputCoercers: Ma
     BaseTypeBuilder<R>(instance::class as KClass<R>, name, inputCoercers = inputCoercers) {
 
     init {
-        require(isValidClassForType(kclass))
+        require(kclass.isValidClassForType())
     }
 
     /**

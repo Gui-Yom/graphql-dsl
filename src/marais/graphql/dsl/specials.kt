@@ -29,11 +29,11 @@ data class InputBuilder(
     val description: String?,
     val builder: GraphQLInputObjectType.Builder.() -> Unit
 ) {
-    val fields = mutableListOf<Pair<String, KType>>()
+    val fields = mutableMapOf<String, KType>()
 
     init {
         for (memberProperty in kclass.memberProperties) {
-            fields += memberProperty.name to memberProperty.returnType
+            fields[memberProperty.name] = memberProperty.returnType
         }
     }
 }

@@ -8,7 +8,14 @@ import kotlin.reflect.full.valueParameters
 
 sealed class Field(val name: String, val description: String? = null) {
 
+    /**
+     * Field arguments as displayed in the schema, no special types
+     */
     abstract val arguments: List<Argument>
+
+    /**
+     * The code behind this field returning a value
+     */
     abstract val dataFetcher: DataFetcher<Any?>
     abstract val outputType: KType
 }
@@ -49,7 +56,14 @@ class CustomField(
     override val outputType: KType,
     override val arguments: List<Argument> = emptyList(),
     override val dataFetcher: DataFetcher<Any?>
-) : Field(name, description)
+) : Field(name, description) {
+
+    init {
+        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
+            throw Exception("GraphQL doesn't support map types")
+        }
+    }
+}
 
 class PropertyField<R>(
     val property: KProperty1<R, Any?>,
@@ -59,8 +73,14 @@ class PropertyField<R>(
 ) : Field(name, description) {
 
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
-    override val outputType: KType = property.returnType.representationType()
+    override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
+
+    init {
+        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
+            throw Exception("GraphQL doesn't support map types")
+        }
+    }
 }
 
 // FIXME it is currently impossible to specify the receiver for the KFunction
@@ -72,8 +92,14 @@ class FunctionField<R>(
     inputCoercers: Map<KClass<*>, IdConverter<*>>
 ) : Field(name, description) {
 
-    override val outputType: KType = func.returnType.representationType()
+    override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()
+
+    init {
+        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
+            throw Exception("GraphQL doesn't support map types")
+        }
+    }
 
     // Might include special types that should not appear on the schema
     val funcArgs = mutableListOf<Argument>()
@@ -88,12 +114,4 @@ class FunctionField<R>(
     }
 
     override val dataFetcher: DataFetcher<Any?> = functionFetcher(func, funcArgs, receiver = instance)
-}
-
-fun List<Field>.containsWithName(name: String): Boolean {
-    for (field in this) {
-        if (field.name == name)
-            return true
-    }
-    return false
 }
