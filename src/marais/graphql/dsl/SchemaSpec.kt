@@ -78,7 +78,7 @@ class SchemaSpec : DescriptionPublisher {
     @SchemaDsl
     inline fun <reified T : Any> inter(
         name: String? = null,
-        configure: InterfaceBuilder<T>.() -> Unit = {}
+        configure: InterfaceBuilder<T>.() -> Unit = { derive() }
     ) {
         val kclass = T::class
         interfaces += InterfaceBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
@@ -87,24 +87,24 @@ class SchemaSpec : DescriptionPublisher {
     @SchemaDsl
     inline fun <reified T : Any> type(
         name: String? = null,
-        configure: TypeBuilder<T>.() -> Unit = {}
+        configure: TypeBuilder<T>.() -> Unit = { derive() }
     ) {
         val kclass = T::class
         types += TypeBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
     }
 
     @SchemaDsl
-    fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit) {
+    inline fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.query = OperationBuilder("Query", query, idTypes).apply(configure)
     }
 
     @SchemaDsl
-    fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit) {
+    inline fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.mutation = OperationBuilder("Mutation", query, idTypes).apply(configure)
     }
 
     @SchemaDsl
-    fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit) {
+    inline fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.subscription = OperationBuilder("Subscription", query, idTypes).apply(configure)
     }
 }

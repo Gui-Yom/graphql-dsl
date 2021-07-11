@@ -102,7 +102,6 @@ val schema = SchemaGenerator {
         No need to call .trimIndent()
     """
     type<Foo> {
-        // TODO specifying interface on a type should automatically declare appropriate fields
         inter<Node>()
 
         // Can be a property
@@ -141,6 +140,12 @@ val schema = SchemaGenerator {
     // The main query object
     // Specify root query fields here
     query(Query) { derive() }
+  
+    // Extra note
+    type<Bar>()
+    // is equivalent to
+    type<Bar> { derive() }
+    // Same with every other type builders
 }.build()
 ```
 
@@ -156,11 +161,12 @@ val schema = SchemaGenerator {
 - [x] Suspend and Flow support
 - [x] Suspend in custom fields
 - [ ] Non suspend custom fields
-- [x] Schema element description
+- [x] Schema element description (partial)
+- [ ] Schema element description on derived fields
 - [ ] Field argument default value (I don't think kotlin allows us to see that)
+- [ ] Automatic Map type conversion to GraphQL List of object
 - [ ] Directive support
 - [ ] Union types
-- [ ] Multithreaded schema building (eg fire up a coroutine for each type to generate)
 - [ ] Relay types builder (connection, edge, pageinfo), similar to graphql-java's relay helpers
 - [ ] Ensure that as many checks as possible are done during the first step of schema building so errors are thrown with
   a useful line number (fail fast, maybe change the way the schema is generated)
