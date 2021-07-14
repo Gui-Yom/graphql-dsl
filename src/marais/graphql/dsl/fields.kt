@@ -66,7 +66,7 @@ class CustomField(
 }
 
 class PropertyField<R>(
-    val property: KProperty1<R, Any?>,
+    property: KProperty1<R, Any?>,
     name: String,
     description: String? = null,
     instance: R? = null
@@ -75,17 +75,11 @@ class PropertyField<R>(
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
-
-    init {
-        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
-            throw Exception("GraphQL doesn't support map types")
-        }
-    }
 }
 
 // FIXME it is currently impossible to specify the receiver for the KFunction
 class FunctionField<R>(
-    val func: KFunction<Any?>,
+    func: KFunction<Any?>,
     name: String,
     description: String? = null,
     instance: R? = null,
@@ -94,12 +88,6 @@ class FunctionField<R>(
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()
-
-    init {
-        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
-            throw Exception("GraphQL doesn't support map types")
-        }
-    }
 
     // Might include special types that should not appear on the schema
     val funcArgs = mutableListOf<Argument>()

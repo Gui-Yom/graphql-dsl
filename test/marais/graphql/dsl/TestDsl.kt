@@ -124,4 +124,15 @@ class TestDsl {
         assertTrue(result.errors.isEmpty(), "${result.errors}")
         log.debug(result.extensions?.toString())
     }
+
+    @Test
+    fun testMap() {
+        val schema = SchemaBuilder {
+            query(object {
+                val prop = mapOf("key" to "value")
+            })
+        }.build()
+
+        log.debug(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
+    }
 }

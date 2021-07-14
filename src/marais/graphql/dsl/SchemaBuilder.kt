@@ -29,7 +29,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
     /**
      * Build the schema following the spec
      */
-    fun build(): GraphQLSchema? {
+    fun build(): GraphQLSchema {
 
         // At this step we should know everything in order to build the schema.
 
@@ -134,42 +134,45 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
         val kclass = type.classifier as KClass<*>
 
-        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
-            GraphQLList.list(resolveOutputType(type.arguments[0].type!!))
-        } else null
-            ?: resolveInOutType(kclass) as? GraphQLOutputType
-            // Search through what has already been resolved
+        val resolved = resolveInOutType(kclass) as? GraphQLOutputType
+        // Search through what has already been resolved
             ?: interfaces[kclass] ?: types[kclass]
             // Fallback to late binding if possible
             ?: names[kclass]?.let { GraphQLTypeReference(it) }
-            // We won't ever see it
-            ?: throw Exception("Can't resolve $type to a valid graphql type")
+            ?: if (kclass.coerceWithList()) {
+                GraphQLList(resolveOutputType(type.unwrap()))
+            } else null
+                ?: if (kclass.isSubclassOf(Map::class)) {
+                    GraphQLList(GraphQLNonNull(makeMapEntry(type)))
+                } else null
+                // We won't ever see it
+                    ?: throw Exception("Can't resolve $type to a valid graphql type")
 
-        return if (type.isMarkedNullable) {
+        return if (type.isMarkedNullable)
             resolved
-        } else
-            GraphQLNonNull.nonNull(resolved)
+        else
+            GraphQLNonNull(resolved)
     }
 
     private fun resolveInputType(type: KType): GraphQLInputType {
 
         val kclass = type.classifier as KClass<*>
 
-        val resolved = if (kclass.isSubclassOf(List::class) || kclass.isSubclassOf(Array::class)) {
-            GraphQLList.list(resolveInputType(type.arguments[0].type!!))
-        } else null
-            ?: resolveInOutType(kclass) as? GraphQLInputType
-            // Search through what has already been resolved
+        val resolved = resolveInOutType(kclass) as? GraphQLInputType
+        // Search through what has already been resolved
             ?: inputs[kclass]
             // Fallback to late binding if possible
             ?: inputNames[kclass]?.let { GraphQLTypeReference(it) }
+            ?: if (kclass.coerceWithList()) {
+                GraphQLList(resolveInputType(type.unwrap()))
+            } else null
             // We won't ever see it
-            ?: throw Exception("Can't resolve $type to a valid graphql type")
+                ?: throw Exception("Can't resolve $type to a valid graphql type")
 
-        return if (type.isMarkedNullable) {
+        return if (type.isMarkedNullable)
             resolved
-        } else
-            GraphQLNonNull.nonNull(resolved)
+        else
+            GraphQLNonNull(resolved)
     }
 
     private fun resolveInOutType(kclass: KClass<*>): GraphQLType? {
@@ -193,7 +196,6 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
         return GraphQLFieldDefinition.newFieldDefinition()
             .name(field.name)
-            .description(field.description)
             .description(field.description)
             .arguments(field.arguments.map(this::makeArgument))
             .type(resolveOutputType(field.outputType))
@@ -245,5 +247,33 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             .name(operation.name)
             .fields(fields)
             .build()
+    }
+
+    private fun makeMapEntry(type: KType): GraphQLObjectType {
+        val name = type.deepName
+
+        codeRegistry.dataFetcher(
+            FieldCoordinates.coordinates(name, "key"),
+            DataFetcher { (it.getSource() as Map.Entry<*, *>).key })
+
+        codeRegistry.dataFetcher(
+            FieldCoordinates.coordinates(name, "value"),
+            DataFetcher { (it.getSource() as Map.Entry<*, *>).value })
+
+        val obj = GraphQLObjectType.newObject()
+            .name(name)
+            .field {
+                it.name("key")
+                    .type(resolveOutputType(type.arguments[0].type!!))
+            }
+            .field {
+                it.name("value")
+                    .type(resolveOutputType(type.arguments[1].type!!))
+            }
+            .build()
+
+        types[Map::class] = obj
+
+        return obj
     }
 }
