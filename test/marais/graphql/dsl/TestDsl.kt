@@ -61,11 +61,12 @@ class TestDsl {
             type<Bar> {
                 inter<Node>()
 
-                derive()
+                derive {
+                    -Bar::field
 
-                -Bar::field
-                assertFailsWith<Exception>("We already removed this field") {
-                    exclude(Bar::field)
+                    assertFailsWith<Exception>("We already excluded this field") {
+                        exclude(Bar::field)
+                    }
                 }
 
                 field("custom") { param: String ->

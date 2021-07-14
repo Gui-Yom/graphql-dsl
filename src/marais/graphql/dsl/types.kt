@@ -13,9 +13,10 @@ import kotlin.reflect.jvm.reflect
 @SchemaDsl
 sealed class BaseTypeBuilder<R : Any>(
     val kclass: KClass<R>,
+    val instance: R? = null,
     val name: String = kclass.simpleName!!,
     val description: String? = null,
-    val inputCoercers: Map<KClass<*>, IdConverter<*>>
+    val inputCoercers: Map<KClass<*>, IdConverter<*>> = emptyMap()
 ) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
 
@@ -70,91 +71,44 @@ sealed class BaseTypeBuilder<R : Any>(
         include(this)
     }
 
-    /**
-     * Exclude all field originating from a class property.
-     *
-     * @throws Exception if this property wasn't included
-     */
-    fun exclude(prop: KProperty1<R, *>) {
-        if (!fields.removeIf {
-                if (it is PropertyField<*>) {
-                    it.property == prop
-                } else false
-            }) throw Exception("Trying to remove a field that's not included")
+    fun derive(
+        kclass: KClass<R>,
+        nameFilter: List<String>,
+        propFilter: List<KProperty1<R, *>>,
+        funFilter: List<KFunction<*>>,
+    ) {
+        deriveProperties(kclass, nameFilter, propFilter)
+        deriveFunctions(kclass, nameFilter, funFilter)
+        // TODO handle the case where a property and a function with the same name exist
     }
 
-    /**
-     * Exclude all field originating from a class function.
-     *
-     * @throws Exception if this function wasn't included
-     */
-    fun exclude(func: KFunction<*>) {
-        if (!fields.removeIf {
-                if (it is FunctionField<*>) {
-                    it.func == func
-                } else false
-            }) throw Exception("Trying to remove a field that's not included")
-    }
-
-    /**
-     * Exclude all fields with the given name.
-     *
-     * @throws Exception if no field exists with this name
-     */
-    fun exclude(name: String) {
-        if (!fields.removeIf {
-                if (it is FunctionField<*>) {
-                    it.name == name
-                } else false
-            }) throw Exception("Trying to remove a field that's not included")
-    }
-
-    /**
-     * Exclude all field originating from a class property.
-     *
-     * @throws Exception if this property wasn't included
-     */
-    operator fun KProperty1<R, *>.unaryMinus() {
-        exclude(this)
-    }
-
-    /**
-     * Exclude all field originating from a class function.
-     *
-     * @throws Exception if this function wasn't included
-     */
-    operator fun KFunction<*>.unaryMinus() {
-        exclude(this)
-    }
-
-    /**
-     * Exclude all fields with the given name.
-     *
-     * @throws Exception if no field exists with this name
-     */
-    operator fun String.unaryMinus() {
-        exclude(this)
-    }
-
-    internal fun derive(kclass: KClass<R>, instance: R?) {
-        deriveProperties(kclass, instance)
-        deriveFunctions(kclass, instance)
-        // FIXME handle the case where a property and a function with the same name exist
-    }
-
-    internal fun deriveProperties(kclass: KClass<R>, instance: R?) {
-        for (member in kclass.memberProperties) {
-            log.debug("[derive] ${name}[${kclass.qualifiedName}] property ${member.name}: ${member.returnType}")
-            fields += PropertyField(member, member.name, instance = instance)
+    fun deriveProperties(
+        kclass: KClass<R>,
+        nameFilter: List<String>,
+        propFilter: List<KProperty1<R, *>>,
+    ) {
+        kclass.memberProperties.asSequence().filter {
+            it.name !in nameFilter
+        }.filter {
+            it !in propFilter
+        }.forEach {
+            log.debug("[derive] ${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
+            fields += PropertyField(it, it.name, null, instance)
         }
     }
 
-    internal fun deriveFunctions(kclass: KClass<R>, instance: R?) {
-        for (member in kclass.memberFunctions) {
-            if (member.name.isValidFunctionForDerive()) {
-                log.debug("[derive] ${name}[${kclass.qualifiedName}] function ${member.name}: ${member.returnType}")
-                fields += FunctionField(member, member.name, instance = instance, inputCoercers = inputCoercers)
-            }
+    fun deriveFunctions(
+        kclass: KClass<R>,
+        nameFilter: List<String>,
+        funFilter: List<KFunction<*>>,
+    ) {
+        kclass.memberFunctions.asSequence().filter {
+            it.name.isValidFunctionForDerive() && it.name !in nameFilter
+        }.filter {
+            it !in funFilter
+        }.forEach {
+            log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
+            fields += FunctionField(it, it.name, null, instance, inputCoercers)
         }
     }
 
@@ -162,21 +116,25 @@ sealed class BaseTypeBuilder<R : Any>(
      * Include fields based on properties and functions present in the backing class.
      */
     @SchemaDsl
-    open fun derive() {
-        derive(kclass, null)
+    inline fun derive(exclusionsBuilder: ExclusionFilterBuilder<R>.() -> Unit = {}) {
+        val exclusions = ExclusionFilterBuilder<R>().apply(exclusionsBuilder)
+        derive(kclass, exclusions.nameExclusions, exclusions.propExclusions, exclusions.funExclusions)
     }
 
     @SchemaDsl
-    fun deriveProperties() {
-        deriveProperties(kclass, null)
+    inline fun deriveProperties(exclusionsBuilder: PropertyExclusionFilterBuilder<R>.() -> Unit = {}) {
+        val exclusions = PropertyExclusionFilterBuilder<R>().apply(exclusionsBuilder)
+        deriveProperties(kclass, exclusions.nameExclusions, exclusions.propExclusions)
     }
 
     @SchemaDsl
-    fun deriveFunctions() {
-        deriveFunctions(kclass, null)
+    inline fun deriveFunctions(exclusionsBuilder: FunctionExclusionFilterBuilder.() -> Unit = {}) {
+        val exclusions = FunctionExclusionFilterBuilder().apply(exclusionsBuilder)
+        deriveFunctions(kclass, exclusions.nameExclusions, exclusions.funExclusions)
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
+    // TODO explore the possibility of making these functions inline to remove the call to resolver.reflect()
 
     @SchemaDsl
     fun <O> field(
@@ -360,7 +318,7 @@ class InterfaceBuilder<R : Any>(
     name: String? = null,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(kclass.isValidClassForInterface())
@@ -372,7 +330,7 @@ class TypeBuilder<R : Any>(
     name: String?,
     description: String? = null,
     inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(kclass, name ?: kclass.simpleName!!, description, inputCoercers) {
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, inputCoercers) {
 
     init {
         require(kclass.isValidClassForType())
@@ -393,18 +351,10 @@ class TypeBuilder<R : Any>(
     }
 }
 
-class OperationBuilder<R : Any>(name: String, val instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
-    BaseTypeBuilder<R>(instance::class as KClass<R>, name, inputCoercers = inputCoercers) {
+class OperationBuilder<R : Any>(name: String, instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
+    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, inputCoercers = inputCoercers) {
 
     init {
         require(kclass.isValidClassForType())
-    }
-
-    /**
-     * Include fields based on properties and functions present in the backing class.
-     */
-    @SchemaDsl
-    override fun derive() {
-        super.derive(kclass, instance)
     }
 }

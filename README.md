@@ -59,10 +59,10 @@ val schema = SchemaBuilder {
         inter<Node>()
 
         // Automatically include properties and member functions
-        derive()
-
-        // Exclude a field
-        -Bar::field
+        derive {
+            // Exclude a field
+            -Bar::field
+        }
 
         field("custom") { param: String ->
             param

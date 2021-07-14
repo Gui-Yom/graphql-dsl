@@ -32,6 +32,7 @@ data class InputBuilder(
     val fields = mutableMapOf<String, KType>()
 
     init {
+        // We only derive input fields from class properties
         for (memberProperty in kclass.memberProperties) {
             fields[memberProperty.name] = memberProperty.returnType
         }
