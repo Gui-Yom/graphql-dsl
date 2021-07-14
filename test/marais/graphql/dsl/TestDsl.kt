@@ -2,7 +2,6 @@ package marais.graphql.dsl
 
 import graphql.GraphQL
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.idl.SchemaPrinter
 import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -11,7 +10,8 @@ import kotlin.test.assertTrue
 class TestDsl {
     private val log = LoggerFactory.getLogger(TestDsl::class.java)
 
-    @ExperimentalStdlibApi
+    // TODO make more smaller test
+
     @Test
     fun testDsl() {
         val startTime = System.currentTimeMillis()
@@ -89,7 +89,7 @@ class TestDsl {
         val buildTime = System.currentTimeMillis() - startTime
         log.debug("Schema build time : $buildTime ms (init : $initTime ms)")
 
-        log.debug(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
+        log.debug(schema.print())
 
         val graphql = GraphQL.newGraphQL(schema).build()
         val result = graphql.execute(
@@ -133,6 +133,6 @@ class TestDsl {
             })
         }.build()
 
-        log.debug(SchemaPrinter(SchemaPrinter.Options.defaultOptions()).print(schema))
+        log.debug(schema.print())
     }
 }
