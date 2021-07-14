@@ -12,6 +12,7 @@ sealed class BaseExclusionFilterBuilder {
      *
      * @throws Exception if this name has already been excluded from the schema
      */
+    @SchemaDsl
     fun exclude(name: String) {
         if (name in nameExclusions)
             throw Exception("This name has already been excluded from the schema.")
@@ -24,6 +25,7 @@ sealed class BaseExclusionFilterBuilder {
      *
      * @throws Exception if this name has already been excluded from the schema
      */
+    @SchemaDsl
     operator fun String.unaryMinus() {
         exclude(this)
     }
@@ -37,6 +39,7 @@ sealed interface BasePropertyExclusionFilter<R> {
      *
      * @throws Exception if this property has already been excluded from the schema
      */
+    @SchemaDsl
     fun exclude(prop: KProperty1<R, *>) {
         if (prop in propExclusions)
             throw Exception("This property has already been excluded from the schema.")
@@ -48,6 +51,7 @@ sealed interface BasePropertyExclusionFilter<R> {
      *
      * @throws Exception if this property has already been excluded from the schema
      */
+    @SchemaDsl
     operator fun KProperty1<R, *>.unaryMinus() {
         exclude(this)
     }
@@ -61,6 +65,7 @@ sealed interface BaseFunctionExclusionFilter {
      *
      * @throws Exception if this function has already been excluded from the schema
      */
+    @SchemaDsl
     fun exclude(func: KFunction<*>) {
         if (func in funExclusions)
             throw Exception("This function has already been excluded from the schema.")
@@ -72,6 +77,7 @@ sealed interface BaseFunctionExclusionFilter {
      *
      * @throws Exception if this function has already been excluded from the schema
      */
+    @SchemaDsl
     operator fun KFunction<*>.unaryMinus() {
         exclude(this)
     }
