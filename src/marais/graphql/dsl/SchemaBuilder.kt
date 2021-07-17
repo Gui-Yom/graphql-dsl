@@ -250,7 +250,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
     }
 
     private fun makeMapEntry(type: KType): GraphQLObjectType {
-        val name = type.deepName
+        val name = type.deepName()
 
         codeRegistry.dataFetcher(
             FieldCoordinates.coordinates(name, "key"),

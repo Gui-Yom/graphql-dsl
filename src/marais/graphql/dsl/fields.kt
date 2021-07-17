@@ -6,18 +6,10 @@ import kotlin.reflect.*
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.valueParameters
 
-sealed class Field(val name: String, val description: String? = null) {
-
-    /**
-     * Field arguments as displayed in the schema, no special types
-     */
-    abstract val arguments: List<Argument>
-
-    /**
-     * The code behind this field returning a value
-     */
-    abstract val dataFetcher: DataFetcher<Any?>
-    abstract val outputType: KType
+internal fun checkType(type: KType) {
+    if (type.hasStarProjection()) {
+        throw Exception("Type can't have star projected type arguments")
+    }
 }
 
 data class Argument(val name: String, val type: KType, val inputCoercer: IdConverter<*>?) {
@@ -27,6 +19,10 @@ data class Argument(val name: String, val type: KType, val inputCoercer: IdConve
         param.type,
         inputCoercers[param.type.classifier as KClass<*>]
     )
+
+    init {
+        checkType(type)
+    }
 
     companion object {
         val envType = DataFetchingEnvironment::class.createType()
@@ -50,6 +46,20 @@ data class Argument(val name: String, val type: KType, val inputCoercer: IdConve
     fun isSpecialType() = type == envType
 }
 
+sealed class Field(val name: String, val description: String? = null) {
+
+    /**
+     * Field arguments as displayed in the schema, no special types
+     */
+    abstract val arguments: List<Argument>
+
+    /**
+     * The code behind this field returning a value
+     */
+    abstract val dataFetcher: DataFetcher<Any?>
+    abstract val outputType: KType
+}
+
 class CustomField(
     name: String,
     description: String? = null,
@@ -59,9 +69,7 @@ class CustomField(
 ) : Field(name, description) {
 
     init {
-        if (outputType.classifier == Map::class || outputType.classifier == MutableMap::class) {
-            throw Exception("GraphQL doesn't support map types")
-        }
+        checkType(outputType)
     }
 }
 
@@ -75,6 +83,10 @@ class PropertyField<R>(
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
+
+    init {
+        checkType(outputType)
+    }
 }
 
 // FIXME it is currently impossible to specify the receiver for the KFunction
@@ -87,6 +99,11 @@ class FunctionField<R>(
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
+
+    init {
+        checkType(outputType)
+    }
+
     override val arguments: MutableList<Argument> = mutableListOf()
 
     // Might include special types that should not appear on the schema

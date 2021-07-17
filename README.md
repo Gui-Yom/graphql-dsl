@@ -108,7 +108,9 @@ val schema = SchemaBuilder {
 - [x] Schema element description (partial)
 - [ ] Schema element description on derived fields
 - [ ] Field argument default value (I don't think kotlin allows us to see that)
-- [ ] Automatic Map type conversion to GraphQL List of Map entry, including map entry monomorphization
+- [ ] Support generics (throw exception on *-projection, type arguments must be declared in the schema,
+  monomorphisation)
+- [x] Automatic Map type conversion to GraphQL List of Map entry, including map entry monomorphization
 - [ ] Support custom map conversions (name, key name, value name)
 - [ ] Directive support
 - [ ] Union types

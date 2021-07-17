@@ -3,11 +3,10 @@ package marais.graphql.dsl
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
 import org.reactivestreams.Publisher
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.typeOf
 
 operator fun List<Field>.contains(name: String): Boolean {
     for (field in this) {
@@ -44,18 +43,11 @@ internal fun String.isValidFunctionForDerive(): Boolean {
     return this !in invalidFunctionName && !componentPattern.matches(this)
 }
 
-internal val flowType = typeOf<Flow<*>>()
-internal val deferredType = typeOf<Deferred<*>>()
-internal val futureType = typeOf<CompletableFuture<*>>()
-internal val publisherType = typeOf<Publisher<*>>()
-
-internal fun KType.isFlow(): Boolean = classifier == flowType.classifier
-
 internal fun KType.isAsyncType(): Boolean {
-    return isFlow()
-            || classifier == deferredType.classifier
-            || classifier == futureType.classifier
-            || classifier == publisherType.classifier
+    return classifier == Flow::class
+            || classifier == Deferred::class
+            || kclass.isSubclassOf(CompletionStage::class)
+            || kclass.isSubclassOf(Publisher::class)
 }
 
 internal val KType.kclass
@@ -71,5 +63,13 @@ internal fun KType.unwrapAsyncType(): KType = if (isAsyncType()) unwrap() else t
 internal val KType.name
     get() = kclass.simpleName!!
 
-internal val KType.deepName: String
-    get() = name + arguments.map { it.type?.deepName }.joinToString(separator = "")
+/**
+ * Includes name of type arguments too
+ */
+internal fun KType.deepName(): String = name + arguments.map { it.type?.deepName() }.joinToString(separator = "")
+
+/**
+ * @return true if any of the type arguments is a *-projection
+ */
+internal fun KType.hasStarProjection(): Boolean =
+    arguments.map { it.type == null }.reduceOrNull { acc, b -> acc || b } ?: false

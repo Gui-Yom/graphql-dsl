@@ -24,7 +24,6 @@ import kotlin.reflect.full.callSuspend
 fun transformMap(value: Any?): Any? {
     return when (value) {
         is Map<*, *> -> value.entries
-        is CompletableFuture<*> -> value.thenApply { (it as Map<*, *>).entries }
         else -> value
     }
 }
