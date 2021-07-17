@@ -108,12 +108,27 @@ class SchemaSpec : DescriptionPublisher {
     }
 
     @SchemaDsl
-    inline fun <T : Any> mutation(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
-        this.mutation = OperationBuilder("Mutation", query, idTypes).apply(configure)
+    inline fun query(configure: OperationBuilder<Any>.() -> Unit) {
+        query(object {}, configure)
     }
 
     @SchemaDsl
-    inline fun <T : Any> subscription(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
-        this.subscription = OperationBuilder("Subscription", query, idTypes).apply(configure)
+    inline fun <T : Any> mutation(mutation: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+        this.mutation = OperationBuilder("Mutation", mutation, idTypes).apply(configure)
+    }
+
+    @SchemaDsl
+    inline fun mutation(configure: OperationBuilder<Any>.() -> Unit) {
+        mutation(object {}, configure)
+    }
+
+    @SchemaDsl
+    inline fun <T : Any> subscription(subscription: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+        this.subscription = OperationBuilder("Subscription", subscription, idTypes).apply(configure)
+    }
+
+    @SchemaDsl
+    inline fun subscription(configure: OperationBuilder<Any>.() -> Unit) {
+        subscription(object {}, configure)
     }
 }

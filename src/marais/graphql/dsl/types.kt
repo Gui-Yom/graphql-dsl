@@ -154,6 +154,11 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    @SchemaDsl
+    operator fun <O> String.invoke(resolver: suspend R.() -> O) {
+        field(this, resolver)
+    }
+
     // TODO Maybe inlining could be better to obtain the type of A
     // We need to reflect the lambda anyway to get param names
     @SchemaDsl
@@ -179,6 +184,11 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     @SchemaDsl
+    operator fun <O, A> String.invoke(resolver: suspend R.(A) -> O) {
+        field(this, resolver)
+    }
+
+    @SchemaDsl
     fun <O, A, B> field(
         name: String,
         resolver: suspend R.(A, B) -> O
@@ -200,6 +210,11 @@ sealed class BaseTypeBuilder<R : Any>(
                     arg1.resolve(it)
                 )
             })
+    }
+
+    @SchemaDsl
+    operator fun <O, A, B> String.invoke(resolver: suspend R.(A, B) -> O) {
+        field(this, resolver)
     }
 
     @SchemaDsl
@@ -229,6 +244,11 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     @SchemaDsl
+    operator fun <O, A, B, C> String.invoke(resolver: suspend R.(A, B, C) -> O) {
+        field(this, resolver)
+    }
+
+    @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
         resolver: suspend R.(A, B, C, D) -> O
@@ -254,6 +274,11 @@ sealed class BaseTypeBuilder<R : Any>(
                     arg3.resolve(it)
                 )
             })
+    }
+
+    @SchemaDsl
+    operator fun <O, A, B, C, D> String.invoke(resolver: suspend R.(A, B, C, D) -> O) {
+        field(this, resolver)
     }
 
     @SchemaDsl
@@ -287,6 +312,11 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     @SchemaDsl
+    operator fun <O, A, B, C, D, E> String.invoke(resolver: suspend R.(A, B, C, D, E) -> O) {
+        field(this, resolver)
+    }
+
+    @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
         resolver: suspend R.(A, B, C, D, E, F) -> O
@@ -316,6 +346,11 @@ sealed class BaseTypeBuilder<R : Any>(
                     arg5.resolve(it)
                 )
             })
+    }
+
+    @SchemaDsl
+    operator fun <O, A, B, C, D, E, F> String.invoke(resolver: suspend R.(A, B, C, D, E, F) -> O) {
+        field(this, resolver)
     }
 }
 

@@ -83,7 +83,7 @@ class TestDsl {
                 }
             }
 
-            query(Query) { derive() }
+            query(Query)
         }
         val initTime = System.currentTimeMillis() - startTime
         val schema = builder.build()
@@ -150,8 +150,8 @@ class TestDsl {
 
             id<MyId>()
 
-            query("object {}") {
-                field("node") { id: MyId ->
+            query {
+                "node" { id: MyId ->
                     id.inner
                 }
             }
