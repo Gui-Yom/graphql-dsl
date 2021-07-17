@@ -7,12 +7,6 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 
-internal fun checkType(type: KType) {
-    if (type.hasStarProjection()) {
-        throw Exception("Type can't have star projected type arguments")
-    }
-}
-
 sealed class Field(val name: String, val description: String? = null) {
 
     /**
@@ -33,12 +27,7 @@ class CustomField(
     override val outputType: KType,
     override val arguments: List<Argument> = emptyList(),
     override val dataFetcher: DataFetcher<Any?>
-) : Field(name, description) {
-
-    init {
-        checkType(outputType)
-    }
-}
+) : Field(name, description)
 
 class PropertyField<R>(
     property: KProperty1<R, Any?>,
@@ -50,10 +39,6 @@ class PropertyField<R>(
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
-
-    init {
-        checkType(outputType)
-    }
 }
 
 // FIXME it is currently impossible to specify the receiver for the KFunction
@@ -66,11 +51,6 @@ class FunctionField<R>(
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
-
-    init {
-        checkType(outputType)
-    }
-
     override val arguments: MutableList<Argument> = mutableListOf()
 
     // Might include special types that should not appear on the schema

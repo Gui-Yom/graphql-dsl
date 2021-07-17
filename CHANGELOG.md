@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Id type coercer can be automatically derived from the class constructor assuming such constructor exists : `constructor(raw: String)`
 
+### Fixed
+
+- Partial fix for fields that return Map
+- Custom fields in root objects
+
 ## [0.4.0] - 2021-07-14
 
 ### Added
