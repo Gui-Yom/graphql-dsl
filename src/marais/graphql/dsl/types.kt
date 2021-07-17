@@ -163,8 +163,8 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -185,10 +185,9 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 =
-            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -210,12 +209,10 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 =
-            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 =
-            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -238,14 +235,11 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 =
-            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 =
-            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 =
-            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -269,16 +263,12 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 =
-            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 =
-            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 =
-            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg4 =
-            reflected.valueParameters[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg4 = params[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -303,18 +293,13 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 =
-            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 =
-            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 =
-            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 =
-            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg4 =
-            reflected.valueParameters[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg5 =
-            reflected.valueParameters[5].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val params = reflected.valueParameters
+        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg4 = params[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg5 = params[5].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
