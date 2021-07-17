@@ -149,7 +149,7 @@ sealed class BaseTypeBuilder<R : Any>(
             emptyList(),
             suspendFetcher {
                 resolver(
-                    it.getSource()
+                    instance ?: it.getSource()
                 )
             })
     }
@@ -172,7 +172,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it)
                 )
             })
@@ -196,7 +196,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it),
                     arg1.resolve(it)
                 )
@@ -223,7 +223,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it),
                     arg1.resolve(it),
                     arg2.resolve(it)
@@ -253,7 +253,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it),
                     arg1.resolve(it),
                     arg2.resolve(it),
@@ -286,7 +286,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it),
                     arg1.resolve(it),
                     arg2.resolve(it),
@@ -322,7 +322,7 @@ sealed class BaseTypeBuilder<R : Any>(
             args,
             suspendFetcher {
                 resolver(
-                    it.getSource(),
+                    instance ?: it.getSource(),
                     arg0.resolve(it),
                     arg1.resolve(it),
                     arg2.resolve(it),
