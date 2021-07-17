@@ -6,18 +6,22 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 @DslMarker
 annotation class SchemaDsl
 
-typealias IdConverter<T> = (value: String?) -> T?
+/**
+ * Called when converting a string input to your Id class
+ */
+typealias IdCoercer<T> = (value: String?) -> T?
 
 internal val log = LoggerFactory.getLogger(SchemaSpec::class.java)
 
 @SchemaDsl
 class SchemaSpec : DescriptionPublisher {
 
-    val idTypes = mutableMapOf<KClass<*>, IdConverter<*>>()
+    val idTypes = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
     val enums = mutableListOf<EnumBuilder>()
 
@@ -49,12 +53,17 @@ class SchemaSpec : DescriptionPublisher {
     /**
      * Use the given class as the GraphQL ID
      *
-     * @param converter since graphql will parse the field as a string we need a
+     * @param coercer since graphql will parse the field as a string we need a
      *                  manual conversion to our type to coerce it in input position
      */
     @SchemaDsl
-    inline fun <reified T : Any> id(noinline converter: IdConverter<T>) {
-        idTypes += T::class to converter
+    inline fun <reified T : Any> id(noinline coercer: IdCoercer<T>? = null) {
+        // Ahem, yes i wrote that
+        val coercer =
+            coercer ?: (T::class.constructors.find { it.parameters[0].type == typeOf<String>() }
+                ?: throw Exception("Can't find an appropriate constructor for ${T::class.simpleName} since no coercer was passed"))
+                .let { constructor -> { it?.let { constructor.call(it) } } }
+        idTypes += T::class to coercer
     }
 
     @SchemaDsl

@@ -16,7 +16,7 @@ sealed class BaseTypeBuilder<R : Any>(
     val instance: R? = null,
     val name: String = kclass.simpleName!!,
     val description: String? = null,
-    val inputCoercers: Map<KClass<*>, IdConverter<*>> = emptyMap()
+    val idCoercers: Map<KClass<*>, IdCoercer<*>> = emptyMap()
 ) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
 
@@ -54,7 +54,7 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += FunctionField<R>(func, name, takeDesc(), inputCoercers = inputCoercers)
+        fields += FunctionField<R>(func, name, takeDesc(), null, idCoercers)
     }
 
     /**
@@ -108,7 +108,7 @@ sealed class BaseTypeBuilder<R : Any>(
             it !in funFilter
         }.forEach {
             log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionField(it, it.name, null, instance, inputCoercers)
+            fields += FunctionField(it, it.name, null, instance, idCoercers)
         }
     }
 
@@ -163,7 +163,8 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -184,8 +185,10 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 =
+            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -207,9 +210,12 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 =
+            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 =
+            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -232,10 +238,14 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 =
+            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 =
+            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 =
+            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -259,11 +269,16 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg4 = Argument(reflected.valueParameters[4], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 =
+            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 =
+            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 =
+            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg4 =
+            reflected.valueParameters[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -288,12 +303,18 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
-        val arg0 = Argument(reflected.valueParameters[0], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg1 = Argument(reflected.valueParameters[1], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg2 = Argument(reflected.valueParameters[2], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg3 = Argument(reflected.valueParameters[3], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg4 = Argument(reflected.valueParameters[4], inputCoercers).also { if (!it.isSpecialType()) args += it }
-        val arg5 = Argument(reflected.valueParameters[5], inputCoercers).also { if (!it.isSpecialType()) args += it }
+        val arg0 =
+            reflected.valueParameters[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg1 =
+            reflected.valueParameters[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg2 =
+            reflected.valueParameters[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg3 =
+            reflected.valueParameters[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg4 =
+            reflected.valueParameters[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg5 =
+            reflected.valueParameters[5].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -317,8 +338,8 @@ class InterfaceBuilder<R : Any>(
     kclass: KClass<R>,
     name: String? = null,
     description: String? = null,
-    inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, inputCoercers) {
+    idCoercers: Map<KClass<*>, IdCoercer<*>>
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, idCoercers) {
 
     init {
         require(kclass.isValidClassForInterface())
@@ -329,8 +350,8 @@ class TypeBuilder<R : Any>(
     kclass: KClass<R>,
     name: String?,
     description: String? = null,
-    inputCoercers: Map<KClass<*>, IdConverter<*>>
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, inputCoercers) {
+    idCoercers: Map<KClass<*>, IdCoercer<*>>
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, idCoercers) {
 
     init {
         require(kclass.isValidClassForType())
@@ -351,8 +372,8 @@ class TypeBuilder<R : Any>(
     }
 }
 
-class OperationBuilder<R : Any>(name: String, instance: R, inputCoercers: Map<KClass<*>, IdConverter<*>>) :
-    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, inputCoercers = inputCoercers) {
+class OperationBuilder<R : Any>(name: String, instance: R, inputCoercers: Map<KClass<*>, IdCoercer<*>>) :
+    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, idCoercers = inputCoercers) {
 
     init {
         require(kclass.isValidClassForType())

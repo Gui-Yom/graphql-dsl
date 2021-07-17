@@ -1,49 +1,16 @@
 package marais.graphql.dsl
 
 import graphql.schema.DataFetcher
-import graphql.schema.DataFetchingEnvironment
-import kotlin.reflect.*
-import kotlin.reflect.full.createType
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KProperty1
+import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 
 internal fun checkType(type: KType) {
     if (type.hasStarProjection()) {
         throw Exception("Type can't have star projected type arguments")
     }
-}
-
-data class Argument(val name: String, val type: KType, val inputCoercer: IdConverter<*>?) {
-
-    constructor(param: KParameter, inputCoercers: Map<KClass<*>, IdConverter<*>>) : this(
-        param.name ?: "anon",
-        param.type,
-        inputCoercers[param.type.classifier as KClass<*>]
-    )
-
-    init {
-        checkType(type)
-    }
-
-    companion object {
-        val envType = DataFetchingEnvironment::class.createType()
-    }
-
-    fun <T> resolve(env: DataFetchingEnvironment): T {
-        return if (type == envType) {
-            env as T
-        } else {
-            if (inputCoercer != null) {
-                inputCoercer.invoke(env.getArgument(name)) as T
-            } else {
-                env.getArgument(name)
-            }
-        }
-    }
-
-    /**
-     * @return true if this argument is of a type that should not be exposed on the schema
-     */
-    fun isSpecialType() = type == envType
 }
 
 sealed class Field(val name: String, val description: String? = null) {
@@ -95,7 +62,7 @@ class FunctionField<R>(
     name: String,
     description: String? = null,
     instance: R? = null,
-    inputCoercers: Map<KClass<*>, IdConverter<*>>
+    idCoercers: Map<KClass<*>, IdCoercer<*>>
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
@@ -107,13 +74,14 @@ class FunctionField<R>(
     override val arguments: MutableList<Argument> = mutableListOf()
 
     // Might include special types that should not appear on the schema
+    // They are used to call the function
     val funcArgs = mutableListOf<Argument>()
 
     init {
         for (it in func.valueParameters) {
-            val arg = Argument(it, inputCoercers)
+            val arg = it.createArgument(idCoercers)
             funcArgs += arg
-            if (!arg.isSpecialType())
+            if (arg !is EnvArgument)
                 arguments += arg
         }
     }

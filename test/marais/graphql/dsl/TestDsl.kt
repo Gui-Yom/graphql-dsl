@@ -4,6 +4,7 @@ import graphql.GraphQL
 import graphql.schema.DataFetchingEnvironment
 import org.slf4j.LoggerFactory
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
@@ -89,7 +90,7 @@ class TestDsl {
         val buildTime = System.currentTimeMillis() - startTime
         log.debug("Schema build time : $buildTime ms (init : $initTime ms)")
 
-        log.debug(schema.print())
+        log.debug(schema.print(includeDirectives = false))
 
         val graphql = GraphQL.newGraphQL(schema).build()
         val result = graphql.execute(
@@ -127,12 +128,37 @@ class TestDsl {
 
     @Test
     fun testMap() {
-        val schema = SchemaBuilder {
+        withSchema({
             query(object {
                 val prop = mapOf("key" to "value")
             })
-        }.build()
+        }) { schema ->
+            log.debug(schema.print(includeDirectives = false))
+            assertEquals(
+                mapOf("prop" to listOf(mapOf("key" to "key", "value" to "value"))),
+                execute("query { prop { key, value } }").getData()
+            )
+        }
+    }
 
-        log.debug(schema.print())
+    @Test
+    fun testAutomaticIdCoercer() {
+
+        data class MyId(val inner: String)
+
+        withSchema({
+
+            id<MyId>()
+
+            query("object {}") {
+                field("node") { id: MyId ->
+                    id.inner
+                }
+            }
+        }) { schema ->
+            log.debug(schema.print(includeDirectives = false))
+
+            assertEquals(mapOf("node" to "hello"), execute("""query { node(id: "hello") }""").getData())
+        }
     }
 }
