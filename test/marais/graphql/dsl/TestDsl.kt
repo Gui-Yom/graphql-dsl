@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class TestDsl {
     private val log = LoggerFactory.getLogger(TestDsl::class.java)
@@ -17,7 +16,7 @@ class TestDsl {
             "answer" { -> 42 }
         }
     }) {
-        assertEquals(mapOf("answer" to 42), execute("""query { answer }""").getData())
+        """query { answer }""" shouldReturns mapOf("answer" to 42)
     }
 
     @Test
@@ -52,12 +51,9 @@ class TestDsl {
             query {
                 "test" { handle: Handle -> handle }
             }
-        }) { schema ->
+        }) {
             assertContains(schema.print(includeDirectives = false), "scalar Handle")
-            assertEquals(
-                mapOf("test" to "hello"),
-                execute("""query { test(handle: "hello") }""").getData()
-            )
+            """query { test(handle: "hello") }""" shouldReturns mapOf("test" to "hello")
         }
     }
 
@@ -76,7 +72,7 @@ class TestDsl {
                 }
             }
         }) {
-            assertEquals(mapOf("node" to "hello"), execute("""query { node(id: "hello") }""").getData())
+            """query { node(id: "hello") }""" shouldReturns mapOf("node" to "hello")
         }
     }
 
@@ -87,33 +83,9 @@ class TestDsl {
         query {
             "test" { -> Baz.VALUE0 }
         }
-    }) { schema ->
+    }) {
         assertContains(schema.typeMap, "Baz")
         assertEquals(3, (schema.typeMap["Baz"] as GraphQLEnumType).values.size)
-    }
-
-    @Test
-    fun testInput() {
-        data class MyInput(
-            val data: String,
-            val other: Int
-        )
-
-        withSchema({
-            input<MyInput>()
-
-            query {
-                "test" { input: MyInput -> "$input.data $input.other" }
-            }
-        }) {
-            val result = execute("""query { test(input: { data: "hello", other: 42 }) }""")
-            println(result.errors)
-            assertTrue(result.errors.isEmpty())
-            assertEquals(
-                mapOf("test" to "hello 42"),
-                result.getData()
-            )
-        }
     }
 
     @Test
@@ -122,9 +94,13 @@ class TestDsl {
             val prop = mapOf("key" to "value")
         })
     }) {
-        assertEquals(
-            mapOf("prop" to listOf(mapOf("key" to "key", "value" to "value"))),
-            execute("query { prop { key, value } }").getData()
+        """query { prop { key, value } }""" shouldReturns mapOf(
+            "prop" to listOf(
+                mapOf(
+                    "key" to "key",
+                    "value" to "value"
+                )
+            )
         )
     }
 }
