@@ -7,3 +7,5 @@ pluginManagement {
 }
 
 rootProject.name = "graphql-dsl"
+
+include(":graphql-dsl-test")

@@ -10,36 +10,21 @@ repositories {
 }
 
 val kotlinVersion: String by project
-val ktxCoroutinesVersion: String by project
-val reactiveStreamsVersion: String by project
 val slf4jVersion: String by project
-val logbackVersion: String by project
 val gqlVersion: String by project
-val junitVersion: String by project
 
 dependencies {
     // Kotlin
-    implementation(platform(kotlin("bom", kotlinVersion)))
-    implementation(kotlin("stdlib-jdk8"))
-    implementation(kotlin("reflect"))
-
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:$ktxCoroutinesVersion"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
-
-    implementation("org.reactivestreams:reactive-streams:$reactiveStreamsVersion")
+    implementation(kotlin("stdlib", kotlinVersion))
+    implementation(kotlin("test-junit5", kotlinVersion))
 
     // Logging
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
     // GraphQL
     implementation("com.graphql-java:graphql-java:$gqlVersion")
-
-    testImplementation(kotlin("test-junit5"))
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testRuntimeOnly("ch.qos.logback:logback-classic:$logbackVersion")
-    testImplementation(project(":graphql-dsl-test"))
+    // GraphQL DSL
+    implementation(project(":"))
 }
 
 sourceSets {
@@ -67,11 +52,6 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
             jvmTarget = JavaVersion.VERSION_11.toString()
-            freeCompilerArgs = listOf(
-                "-Xopt-in=kotlin.ExperimentalStdlibApi",
-                "-Xopt-in=kotlin.reflect.jvm.ExperimentalReflectionOnLambdas",
-                "-Xopt-in=kotlinx.coroutines.DelicateCoroutinesApi"
-            )
         }
     }
 
@@ -94,11 +74,11 @@ publishing {
         githubPackages("Gui-Yom/graphql-dsl")
     }
     publications {
-        create<MavenPublication>("graphql-dsl") {
+        create<MavenPublication>("graphql-dsl-test") {
             from(project.components["java"])
             pom {
-                name.set(rootProject.name)
-                description.set("Generate your GraphQL schema with a code-first Kotlin DSL")
+                name.set("graphql-dsl-test")
+                description.set("Test your GraphQL code with a code-first Kotlin DSL")
                 url.set("https://github.com/Gui-Yom/graphql-dsl")
                 developers {
                     developer {
@@ -117,5 +97,5 @@ publishing {
 }
 
 signing {
-    sign(publishing.publications["graphql-dsl"])
+    sign(publishing.publications["graphql-dsl-test"])
 }

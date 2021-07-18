@@ -9,8 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Id type coercer can be automatically derived from the class constructor assuming such constructor exists : `constructor(raw: String)`
+- Id type coercer can be automatically derived from the class constructor assuming such constructor
+  exists : `constructor(raw: String)`
 - New notations for fields and for root objects :
+
 ```kotlin
 query { }
 // is equivalent to
@@ -22,6 +24,8 @@ query {
     field("fieldname") { -> "Yay" }
 }
 ```
+
+- New test framework for your graphql code based on graphql-dsl under `/graphql-dsl-test`
 
 ### Fixed
 

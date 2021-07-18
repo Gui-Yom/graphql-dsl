@@ -1,8 +1,11 @@
-package marais.graphql.dsl
+package marais.graphql.dsl.test
 
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
+import marais.graphql.dsl.SchemaBuilder
+import marais.graphql.dsl.SchemaSpec
+import marais.graphql.dsl.print
 import org.slf4j.LoggerFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

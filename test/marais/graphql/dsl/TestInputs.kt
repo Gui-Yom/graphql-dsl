@@ -1,5 +1,6 @@
 package marais.graphql.dsl
 
+import marais.graphql.dsl.test.withSchema
 import kotlin.test.Test
 
 class TestInputs {
