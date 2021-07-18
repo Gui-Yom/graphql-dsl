@@ -9,23 +9,23 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 
 data class ScalarBuilder(
-    val name: String,
     val kclass: KClass<*>,
+    val name: String,
     val coercing: Coercing<*, *>,
     val description: String?,
     val builder: GraphQLScalarType.Builder.() -> Unit
 )
 
 data class EnumBuilder(
-    val name: String,
     val kclass: KClass<*>,
+    val name: String,
     val description: String?,
     val builder: GraphQLEnumType.Builder.() -> Unit
 )
 
 data class InputBuilder(
-    val name: String,
     val kclass: KClass<*>,
+    val name: String,
     val description: String?,
     val builder: GraphQLInputObjectType.Builder.() -> Unit
 ) {

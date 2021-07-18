@@ -65,7 +65,7 @@ fun functionFetcher(
                 func.callSuspend(
                     receiver ?: env.getSource(),
                     *args.map {
-                        it.resolve<Any>(env)
+                        it.resolve(env)
                     }.toTypedArray()
                 )
             )
@@ -76,7 +76,7 @@ fun functionFetcher(
                 func.call(
                     receiver ?: env.getSource(),
                     *args.map {
-                        it.resolve<Any>(env)
+                        it.resolve(env)
                     }.toTypedArray()
                 ),
                 context

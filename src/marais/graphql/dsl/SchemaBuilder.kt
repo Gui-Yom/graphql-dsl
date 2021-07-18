@@ -185,7 +185,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
             String::class -> Scalars.GraphQLString
             Char::class -> Scalars.GraphQLString // default
             Boolean::class -> Scalars.GraphQLBoolean
-            in schemaBuilder.idTypes -> Scalars.GraphQLID
+            in schemaBuilder.idCoercers -> Scalars.GraphQLID
             else -> null
         } ?: enums[kclass]
     }

@@ -1,7 +1,6 @@
 package marais.graphql.dsl
 
 import graphql.schema.DataFetcher
-import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
@@ -47,7 +46,7 @@ class FunctionField<R>(
     name: String,
     description: String? = null,
     instance: R? = null,
-    idCoercers: Map<KClass<*>, IdCoercer<*>>
+    context: SchemaContext
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
@@ -59,7 +58,7 @@ class FunctionField<R>(
 
     init {
         for (it in func.valueParameters) {
-            val arg = it.createArgument(idCoercers)
+            val arg = it.createArgument(context)
             funcArgs += arg
             if (arg !is EnvArgument)
                 arguments += arg

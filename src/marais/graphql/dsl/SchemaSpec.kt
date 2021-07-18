@@ -18,15 +18,22 @@ typealias IdCoercer<T> = (value: String?) -> T?
 
 internal val log = LoggerFactory.getLogger(SchemaSpec::class.java)
 
-@SchemaDsl
-class SchemaSpec : DescriptionPublisher {
+interface SchemaContext {
+    val idCoercers: Map<KClass<*>, IdCoercer<*>>
+    val inputs: List<InputBuilder>
 
-    val idTypes = mutableMapOf<KClass<*>, IdCoercer<*>>()
+    fun isInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass } != null
+}
+
+@SchemaDsl
+class SchemaSpec : SchemaContext, DescriptionPublisher {
+
+    override val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
     val enums = mutableListOf<EnumBuilder>()
 
     // Maps a kotlin type to a graphql input type declaration
-    val inputs = mutableListOf<InputBuilder>()
+    override val inputs = mutableListOf<InputBuilder>()
 
     // Maps a kotlin type to a graphql interface declaration
     val interfaces = mutableListOf<InterfaceBuilder<*>>()
@@ -47,7 +54,8 @@ class SchemaSpec : DescriptionPublisher {
         coercing: Coercing<T, *>,
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        scalars += ScalarBuilder(name, T::class, coercing, takeDesc(), builder)
+        val kclass = T::class
+        scalars += ScalarBuilder(kclass, name, coercing, takeDesc(), builder)
     }
 
     /**
@@ -63,7 +71,7 @@ class SchemaSpec : DescriptionPublisher {
             coercer ?: (T::class.constructors.find { it.parameters[0].type == typeOf<String>() }
                 ?: throw Exception("Can't find an appropriate constructor for ${T::class.simpleName} since no coercer was passed"))
                 .let { constructor -> { it?.let { constructor.call(it) } } }
-        idTypes += T::class to coercer
+        idCoercers += T::class to coercer
     }
 
     @SchemaDsl
@@ -72,7 +80,7 @@ class SchemaSpec : DescriptionPublisher {
         noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        enums += EnumBuilder(name ?: kclass.simpleName!!, kclass, takeDesc(), builder)
+        enums += EnumBuilder(kclass, name ?: kclass.simpleName!!, takeDesc(), builder)
     }
 
     @SchemaDsl
@@ -81,7 +89,7 @@ class SchemaSpec : DescriptionPublisher {
         noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
         val kclass = T::class
-        inputs += InputBuilder(name ?: kclass.simpleName!!, kclass, takeDesc(), builder)
+        inputs += InputBuilder(kclass, name ?: kclass.simpleName!!, takeDesc(), builder)
     }
 
     @SchemaDsl
@@ -90,7 +98,7 @@ class SchemaSpec : DescriptionPublisher {
         configure: InterfaceBuilder<T>.() -> Unit = { derive() }
     ) {
         val kclass = T::class
-        interfaces += InterfaceBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
+        interfaces += InterfaceBuilder(kclass, name, takeDesc(), this).apply(configure)
     }
 
     @SchemaDsl
@@ -99,12 +107,12 @@ class SchemaSpec : DescriptionPublisher {
         configure: TypeBuilder<T>.() -> Unit = { derive() }
     ) {
         val kclass = T::class
-        types += TypeBuilder(kclass, name, takeDesc(), idTypes).apply(configure)
+        types += TypeBuilder(kclass, name, takeDesc(), this).apply(configure)
     }
 
     @SchemaDsl
     inline fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
-        this.query = OperationBuilder("Query", query, idTypes).apply(configure)
+        this.query = OperationBuilder("Query", query, this).apply(configure)
     }
 
     @SchemaDsl
@@ -114,7 +122,7 @@ class SchemaSpec : DescriptionPublisher {
 
     @SchemaDsl
     inline fun <T : Any> mutation(mutation: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
-        this.mutation = OperationBuilder("Mutation", mutation, idTypes).apply(configure)
+        this.mutation = OperationBuilder("Mutation", mutation, this).apply(configure)
     }
 
     @SchemaDsl
@@ -124,7 +132,7 @@ class SchemaSpec : DescriptionPublisher {
 
     @SchemaDsl
     inline fun <T : Any> subscription(subscription: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
-        this.subscription = OperationBuilder("Subscription", subscription, idTypes).apply(configure)
+        this.subscription = OperationBuilder("Subscription", subscription, this).apply(configure)
     }
 
     @SchemaDsl

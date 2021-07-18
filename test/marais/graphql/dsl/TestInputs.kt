@@ -36,10 +36,61 @@ class TestInputs {
             input<MyInput>()
 
             query {
-                "test" { input: MyInput -> "$input.data $input.other" }
+                "test" { input: MyInput -> "${input.data} ${input.other}" }
             }
         }) {
             """query { test(input: { data: "hello", other: 42 }) }""" shouldReturns mapOf("test" to "hello 42")
+        }
+    }
+
+    @Test
+    fun `nested input object`() {
+
+        data class OtherInput(val data: Int)
+
+        data class MyInput(
+            val data: String,
+            val nested: OtherInput
+        )
+
+        withSchema({
+            input<OtherInput>()
+            input<MyInput>()
+
+            query {
+                "test" { input: MyInput -> "${input.data} ${input.nested.data}" }
+            }
+        }) {
+            """query { test(input: { data: "hello", nested: { data: 42 } }) }""" shouldReturns mapOf("test" to "hello 42")
+        }
+    }
+
+    @Test
+    fun `self referencing input object`() {
+
+        data class MyInput(
+            val data: String,
+            val nested: MyInput?
+        )
+
+        withSchema({
+            input<MyInput>()
+
+            query {
+                "test" { input: MyInput ->
+                    sequence {
+                        var acc: MyInput? = input
+                        while (acc != null) {
+                            yield(acc.data)
+                            acc = acc.nested
+                        }
+                    }.joinToString(" ")
+                }
+            }
+        }) {
+            """query { test(input: { data: "hello", nested: { data: "world", nested: null } }) }""" shouldReturns mapOf(
+                "test" to "hello world"
+            )
         }
     }
 
@@ -50,6 +101,26 @@ class TestInputs {
         }
     }) {
         """query { test(numbers: [0, 1, 2, 3]) }""" shouldReturns mapOf("test" to listOf("0", "1", "2", "3"))
+    }
+
+    @Test
+    fun `list of input objects`() {
+
+        data class MyInput(
+            val data: String,
+        )
+
+        withSchema({
+            input<MyInput>()
+
+            query {
+                "test" { inputs: List<MyInput> -> inputs.map { it.data }.joinToString(" ") }
+            }
+        }) {
+            """query { test(inputs: [{ data: "hello" }, { data: "world" }]) }""" shouldReturns mapOf(
+                "test" to "hello world"
+            )
+        }
     }
 
     @Test

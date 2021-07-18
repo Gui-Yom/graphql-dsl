@@ -16,7 +16,7 @@ sealed class BaseTypeBuilder<R : Any>(
     val instance: R? = null,
     val name: String = kclass.simpleName!!,
     val description: String? = null,
-    val idCoercers: Map<KClass<*>, IdCoercer<*>> = emptyMap()
+    val context: SchemaContext
 ) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
 
@@ -54,7 +54,7 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += FunctionField<R>(func, name, takeDesc(), null, idCoercers)
+        fields += FunctionField<R>(func, name, takeDesc(), null, context)
     }
 
     /**
@@ -108,7 +108,7 @@ sealed class BaseTypeBuilder<R : Any>(
             it !in funFilter
         }.forEach {
             log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionField(it, it.name, null, instance, idCoercers)
+            fields += FunctionField(it, it.name, null, instance, context)
         }
     }
 
@@ -161,6 +161,8 @@ sealed class BaseTypeBuilder<R : Any>(
 
     // TODO Maybe inlining could be better to obtain the type of A
     // We need to reflect the lambda anyway to get param names
+
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A> field(
         name: String,
@@ -169,7 +171,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -178,7 +180,7 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it)
+                    arg0.resolve(it) as A
                 )
             })
     }
@@ -188,6 +190,7 @@ sealed class BaseTypeBuilder<R : Any>(
         field(this, resolver)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B> field(
         name: String,
@@ -196,8 +199,8 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -206,8 +209,8 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it),
-                    arg1.resolve(it)
+                    arg0.resolve(it) as A,
+                    arg1.resolve(it) as B
                 )
             })
     }
@@ -217,6 +220,7 @@ sealed class BaseTypeBuilder<R : Any>(
         field(this, resolver)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C> field(
         name: String,
@@ -225,9 +229,9 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -236,9 +240,9 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it),
-                    arg1.resolve(it),
-                    arg2.resolve(it)
+                    arg0.resolve(it) as A,
+                    arg1.resolve(it) as B,
+                    arg2.resolve(it) as C
                 )
             })
     }
@@ -248,6 +252,7 @@ sealed class BaseTypeBuilder<R : Any>(
         field(this, resolver)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
@@ -256,10 +261,10 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -268,10 +273,10 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it),
-                    arg1.resolve(it),
-                    arg2.resolve(it),
-                    arg3.resolve(it)
+                    arg0.resolve(it) as A,
+                    arg1.resolve(it) as B,
+                    arg2.resolve(it) as C,
+                    arg3.resolve(it) as D
                 )
             })
     }
@@ -281,6 +286,7 @@ sealed class BaseTypeBuilder<R : Any>(
         field(this, resolver)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E> field(
         name: String,
@@ -289,11 +295,11 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg4 = params[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg4 = params[4].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -302,11 +308,11 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it),
-                    arg1.resolve(it),
-                    arg2.resolve(it),
-                    arg3.resolve(it),
-                    arg4.resolve(it)
+                    arg0.resolve(it) as A,
+                    arg1.resolve(it) as B,
+                    arg2.resolve(it) as C,
+                    arg3.resolve(it) as D,
+                    arg4.resolve(it) as E
                 )
             })
     }
@@ -316,6 +322,7 @@ sealed class BaseTypeBuilder<R : Any>(
         field(this, resolver)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
@@ -324,12 +331,12 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = resolver.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg4 = params[4].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
-        val arg5 = params[5].createArgument(idCoercers).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg4 = params[4].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg5 = params[5].createArgument(context).also { if (it !is EnvArgument) args += it }
         fields += CustomField(
             name,
             takeDesc(),
@@ -338,12 +345,12 @@ sealed class BaseTypeBuilder<R : Any>(
             suspendFetcher {
                 resolver(
                     instance ?: it.getSource(),
-                    arg0.resolve(it),
-                    arg1.resolve(it),
-                    arg2.resolve(it),
-                    arg3.resolve(it),
-                    arg4.resolve(it),
-                    arg5.resolve(it)
+                    arg0.resolve(it) as A,
+                    arg1.resolve(it) as B,
+                    arg2.resolve(it) as C,
+                    arg3.resolve(it) as D,
+                    arg4.resolve(it) as E,
+                    arg5.resolve(it) as F
                 )
             })
     }
@@ -358,8 +365,8 @@ class InterfaceBuilder<R : Any>(
     kclass: KClass<R>,
     name: String? = null,
     description: String? = null,
-    idCoercers: Map<KClass<*>, IdCoercer<*>>
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, idCoercers) {
+    context: SchemaContext
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, context) {
 
     init {
         require(kclass.isValidClassForInterface())
@@ -370,8 +377,8 @@ class TypeBuilder<R : Any>(
     kclass: KClass<R>,
     name: String?,
     description: String? = null,
-    idCoercers: Map<KClass<*>, IdCoercer<*>>
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, idCoercers) {
+    context: SchemaContext
+) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, context) {
 
     init {
         require(kclass.isValidClassForType())
@@ -392,8 +399,8 @@ class TypeBuilder<R : Any>(
     }
 }
 
-class OperationBuilder<R : Any>(name: String, instance: R, inputCoercers: Map<KClass<*>, IdCoercer<*>>) :
-    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, idCoercers = inputCoercers) {
+class OperationBuilder<R : Any>(name: String, instance: R, context: SchemaContext) :
+    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, null, context) {
 
     init {
         require(kclass.isValidClassForType())

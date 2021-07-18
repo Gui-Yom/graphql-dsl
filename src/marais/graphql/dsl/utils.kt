@@ -56,7 +56,13 @@ internal val KType.kclass
 /**
  * Returns the first type argument, this won't check if that class is an actual container
  */
-internal fun KType.unwrap(): KType = arguments[0].type!!
+internal fun KType.unwrap(): KType {
+    return if (arguments.size == 1) {
+        arguments[0].type ?: throw Exception("No *-projection allowed")
+    } else {
+        throw Exception("Called unwrap on a type with a number of type arguments != 1")
+    }
+}
 
 internal fun KType.unwrapAsyncType(): KType = if (isAsyncType()) unwrap() else this
 
