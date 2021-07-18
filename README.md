@@ -2,6 +2,8 @@
 
 Build your GraphQL schema with a declarative Kotlin DSL.
 
+See also [graphql-dsl-test](#graphql-dsl-test) for some test utilities.
+
 ## Example
 
 ```kotlin
@@ -136,3 +138,68 @@ println(schema.print())
 - Map everything at initialization so minimal work is done at runtime
 - Cache lookups to input objects constructors and parameters
 - Explore a way to verify and generate the schema at compile time through a compiler plugin or a gradle plugin
+
+## Installation
+
+Artifacts are only published to Github Packages. With Gradle :
+
+```kotlin
+repositories {
+    maven {
+        setUrl("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
+        credentials { ... }
+    }
+}
+dependencies {
+    testImplementation("marais:graphql-dsl:0.5.0")
+}
+```
+
+# graphql-dsl-test
+
+The `graphql-dsl-test` artifact includes small utilities to make testing your schema code through graphql queries
+easier.
+
+## Example
+
+```kotlin
+@Test
+fun testMyQuery() = withSchema({
+        query {
+            "test" { a: Int -> 2 * a }
+        }
+    }) {
+        // The above schema will be printed through a debug logger
+        // The receiver exposes the following properties and functions
+
+        // Access the GraphQL instance and the schema
+        graphql.execute("query { }")
+        assertTrue(schema.typeMap.contains("Query"))
+
+        // Execute a query and do something with the ExecutionResult as receiver
+        withQuery("""query { test(a: 21) }""") {
+            assertTrue(errors.isEmpty())
+        }
+
+        // This checks that there are no errors and print them in case of failure
+        assertQueryReturns("""query { test(a: 21) }""", mapOf("test" to 42))
+        // equivalent to
+        """query { test(a: 21) }""" shouldReturns mapOf("test" to 42)
+    }
+```
+
+## Installation
+
+Artifacts are only published to Github Packages. With Gradle :
+
+```kotlin
+repositories {
+    maven {
+        setUrl("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
+        credentials { ... }
+    }
+}
+dependencies {
+    testImplementation("marais:graphql-dsl-test:0.5.0")
+}
+```
