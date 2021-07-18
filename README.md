@@ -95,26 +95,33 @@ val schema = SchemaBuilder {
 
 ## Features
 
-- [x] Basic types + fields
-- [x] Scalars
-- [x] Interfaces (not as type checked as I would)
-- [x] Field arguments
-- [x] Input objects
-- [x] Enums
-- [x] CompletableFuture and Publisher support
-- [x] Suspend and Flow support
-- [x] Suspend in custom fields
-- [ ] Non suspend custom fields
-- [x] Schema element description (partial)
-- [ ] Schema element description on derived fields
-- [ ] Support primitive arrays and object arrays
-- [ ] Field argument default value (I don't think kotlin allows us to see that)
-- [ ] Support generics on types (throw exception on *-projection, type arguments must be declared in the schema,
+- All operations (query, mutation, subscription)
+- Object types, backed by a Kotlin type
+- Custom scalars
+- Interfaces, backed by a Kotlin supertype
+- Input objects, backed by a kotlin data class, can reference other input objects including self
+- Enums, backed by a Kotlin enum class
+- Derive fields for types automatically from member properties, functions and custom exclusion rules
+- Suspend, Deferred and CompletableFuture support for async fields
+- Flow and Publisher support for subscription fields
+- Suspend custom fields (fields without a property or a function)
+- Schema descriptions directly in the DSL (no descriptions on derived fields)
+- Map type support through automatic conversion to List<MapEntry>
+
+## Planned features
+
+- Non suspend custom fields
+- Description on derived fields (need annotations)
+- Support primitive arrays and object arrays
+- Support list of input objects
+- Field argument default value (need annotations)
+- Support generics types (throw exception on *-projection, type arguments must be declared in the schema,
   monomorphisation)
-- [x] Automatic Map type conversion to GraphQL List of Map entry, including map entry monomorphization
-- [ ] Support custom map conversions (name, key name, value name)
-- [ ] Directive support
-- [ ] Union types
-- [ ] Relay types builder (connection, edge, pageinfo), similar to graphql-java's relay helpers
-- [ ] Ensure that as many checks as possible are done during the first step of schema building so errors are thrown with
-  a useful line number (fail fast, maybe change the way the schema is generated)
+- Support custom map entries (name, key name, value name)
+- Directive support
+- Union types
+- Relay types builders (connection, edge, pageinfo), similar to graphql-java's relay helpers
+- Ensure that as many checks as possible are done during the first step of schema building so errors are thrown with a
+  useful line number (fail fast, maybe change the way the schema is generated)
+- Map everything at initialization so minimal work is done at runtime
+- Cache lookups to input objects constructors and parameters
