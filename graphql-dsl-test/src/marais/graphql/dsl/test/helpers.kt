@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val log = LoggerFactory.getLogger("Helpers")
+private val log = LoggerFactory.getLogger("marais.graphql.dsl.test.Helpers")
 
 fun withSchema(schemaBuilder: SchemaSpec.() -> Unit, block: SchemaTestContext.() -> Unit) {
     val schema = SchemaBuilder(schemaBuilder).build()
@@ -26,7 +26,7 @@ class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
     fun assertQueryReturns(query: String, expected: Map<String, Any?>) {
         withQuery(query) {
             assertTrue(errors.isEmpty(), errors.toString())
-            assertEquals(expected, getData(), getData<Map<String, Any?>>().toString())
+            assertEquals(expected, getData())
         }
     }
 
