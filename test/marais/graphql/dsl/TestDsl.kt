@@ -26,7 +26,7 @@ class TestDsl {
         data class Handle(val inner: String)
 
         withSchema({
-            scalar("Handle", object : Coercing<Handle, String> {
+            scalar(object : Coercing<Handle, String> {
                 override fun serialize(dataFetcherResult: Any?): String {
                     return when (dataFetcherResult) {
                         is Handle -> dataFetcherResult.inner

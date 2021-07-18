@@ -1,38 +1,29 @@
 # graphql-dsl
 
-Goal: build a graphql schema with a nice dsl, be the poweruser and control everything that gets generated, does nothing
-under the hood by default, no (or minimal) runtime reflection (excluding schema building)
-
-Stretch goal : Compile time schema building instead of runtime. Or at least a way to cook generated schema once at first
-runtime then include it at the next compilation.
+Build your GraphQL schema with a declarative Kotlin DSL.
 
 ## Example
 
 ```kotlin
 val schema = SchemaBuilder {
 
-    // Define a scalar type given its Coercing implementation
-    scalar("Url", UrlCoercing)
+    // Declare a scalar type given its Coercing implementation
+    scalar(UrlCoercing, "Url")
 
     // Declare MyId as a graphql ID scalar
     id<MyId>()
 
-    // Define an enum directly based on its values
+    // Declare an enum directly based on its values
     enum<Baz>()
 
-    // Define an input type
+    // Declare an input type
     input<Input>()
 
-    // Define an interface backed by a kotlin interface / abstract class / sealed class / open class
+    // Declare an interface
     !"This describes my Node interface"
     inter<Node> {
+        // Construct the interface fields from the class member functions 
         derive()
-
-        // Additional fields will be implemented by default on implementing types
-        !"Description on a field too !"
-        field("parent") { ->
-            MyId("Node:" + id.inner)
-        }
     }
 
     // Define a type backed by a kotlin class
@@ -48,11 +39,11 @@ val schema = SchemaBuilder {
         // Can be a member function
         // We can rename fields too
         include(Foo::dec, "decrement")
+        // Shorthand notation
         +Foo::field
-        // Can be a custom function
-        field("inc") { _: DataFetchingEnvironment ->
-            field + 1
-        }
+        // Can be a custom field
+        // The lambda uses Foo as receiver
+        field("inc") { -> field + 1 }
     }
 
     type<Bar> {
@@ -64,17 +55,27 @@ val schema = SchemaBuilder {
             -Bar::field
         }
 
-        field("custom") { param: String ->
+        // Use the input type we defined earlier
+        field("custom") { param: Input ->
             param
         }
 
+        // List are expected to work too !
         field("custom2") { a: List<Int>, b: Int ->
             a.map { it * b }
         }
 
-        field("custom3") { a: Int, b: Float, c: MyId ->
+        // No need for field()
+        // You can declare fields using the invoke operator defined on String in this context
+        "custom3" { a: Int, b: Float, c: MyId ->
             "$c: ${a * b}"
         }
+
+        // Custom fields support up to 6 arguments
+
+        // You can inject special arguments
+        // They won't be included in the schema
+        "consumesEnv" { env: DataFetchingEnvironment -> env.executionId }
     }
 
     // The main query object
@@ -83,14 +84,22 @@ val schema = SchemaBuilder {
     // object Query {
     //   fun allFoos(): List<Foo> = ...
     // }
-    query(Query) { derive() }
+    query(Query)
+
+    // No need for a Kotlin object, define your query type directly with custom fields
+    query {
+        "answer" { -> 42 }
+    }
 
     // Also
     type<Bar>()
-    // is equivalent to
+    // is directly equivalent to
     type<Bar> { derive() }
     // Same with every other type builders
 }.build() // Returns a ready to use GraphQLSchema
+
+// You can use the GraphQLSchema.print() extension to render your schema to a String
+println(schema.print())
 ```
 
 ## Features
@@ -110,6 +119,7 @@ val schema = SchemaBuilder {
 
 ## Planned features
 
+- Support injecting GraphQLContext field parameter
 - Non suspend custom fields
 - Description on derived fields (need annotations)
 - Support primitive arrays and object arrays
@@ -125,3 +135,4 @@ val schema = SchemaBuilder {
   useful line number (fail fast, maybe change the way the schema is generated)
 - Map everything at initialization so minimal work is done at runtime
 - Cache lookups to input objects constructors and parameters
+- Explore a way to verify and generate the schema at compile time through a compiler plugin or a gradle plugin

@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 
-sealed class Field(val name: String, val description: String? = null) {
+sealed class Field(val name: String, val description: String?) {
 
     /**
      * Field arguments as displayed in the schema, no special types
@@ -22,7 +22,7 @@ sealed class Field(val name: String, val description: String? = null) {
 
 class CustomField(
     name: String,
-    description: String? = null,
+    description: String?,
     override val outputType: KType,
     override val arguments: List<Argument> = emptyList(),
     override val dataFetcher: DataFetcher<Any?>
@@ -31,7 +31,7 @@ class CustomField(
 class PropertyField<R>(
     property: KProperty1<R, Any?>,
     name: String,
-    description: String? = null,
+    description: String?,
     instance: R? = null
 ) : Field(name, description) {
 
@@ -44,9 +44,9 @@ class PropertyField<R>(
 class FunctionField<R>(
     func: KFunction<Any?>,
     name: String,
-    description: String? = null,
-    instance: R? = null,
-    context: SchemaContext
+    description: String?,
+    instance: R?,
+    context: SchemaBuilderContext
 ) : Field(name, description) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()

@@ -14,7 +14,7 @@ class Benchmark {
         val startTime = System.currentTimeMillis()
         val builder = SchemaBuilder {
 
-            scalar("Url", UrlCoercing)
+            scalar(UrlCoercing, "Url")
             id<MyId> {
                 it?.let { MyId(it) }
             }

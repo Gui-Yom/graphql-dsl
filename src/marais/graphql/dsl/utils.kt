@@ -16,18 +16,21 @@ operator fun List<Field>.contains(name: String): Boolean {
     return false
 }
 
-internal fun KClass<*>.isValidClassForType(): Boolean {
-    return !(isSealed || isAbstract)
-}
+internal fun KClass<*>.isValidClassForType(): Boolean = !(isSealed || isAbstract)
 
-internal fun KClass<*>.isValidClassForInterface(): Boolean {
-    return isSealed || isAbstract || isOpen
-}
+internal fun KClass<*>.isValidClassForInterface(): Boolean = isSealed || isAbstract || isOpen
 
 /**
  * @return true if this type can coerce with a graphql list
  */
 internal fun KClass<*>.coerceWithList(): Boolean = isSubclassOf(Iterable::class)
+
+/**
+ * Create a displayable name for this class for inclusion in a schema
+ */
+fun KClass<*>.deriveName(): String {
+    return simpleName ?: throw Exception("Can't find a name for $this, please define a name explicitly")
+}
 
 /**
  * Those functions are usually not wanted in the schema.

@@ -6,17 +6,17 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
+import kotlin.reflect.typeOf
 
 @SchemaDsl
 sealed class BaseTypeBuilder<R : Any>(
     val kclass: KClass<R>,
-    val instance: R? = null,
-    val name: String = kclass.simpleName!!,
-    val description: String? = null,
-    val context: SchemaContext
+    private val instance: R?,
+    val name: String,
+    val description: String?,
+    private val context: SchemaBuilderContext
 ) : DescriptionPublisher {
     val fields: MutableList<Field> = mutableListOf()
 
@@ -25,14 +25,22 @@ sealed class BaseTypeBuilder<R : Any>(
 
     /**
      * Include a field from a static value. No computations, a plain static value that won't ever change.
+     *
+     * @param name the name of this field.
+     * @param value the value returned by this field.
+     * @param T the type of this field as shown in the schema. By default, it is inferred from [value].
      */
+    @SchemaDsl
     inline fun <reified T : Any> static(name: String, value: T) {
-        // TODO Use typeOf() here when stabilized
-        fields += CustomField(name, null, T::class.starProjectedType, emptyList(), StaticDataFetcher(value))
+        fields += CustomField(name, null, typeOf<T>(), emptyList(), StaticDataFetcher(value))
     }
 
     /**
      * Include a field originating from a class property.
+     *
+     * @param property the property to include as a field.
+     * @param name the name of the field, defaults to the name of the property.
+     * @param O the type of the field as shown in the schema. By default, it is inferred from the type of [property].
      */
     @SchemaDsl
     fun <O> include(
@@ -45,7 +53,18 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     /**
+     * Include a field originating from a class property.
+     */
+    operator fun KProperty1<R, *>.unaryPlus() {
+        include(this)
+    }
+
+    /**
      * Include a field originating from a class function.
+     *
+     * @param func the function to include as a field.
+     * @param name the name of the field, defaults to the name of the function.
+     * @param O the type of the field as shown in the schema. By default, it is inferred from the type of [func].
      */
     @SchemaDsl
     fun <O : Any?> include(
@@ -58,13 +77,6 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     /**
-     * Include a field originating from a class property.
-     */
-    operator fun KProperty1<R, *>.unaryPlus() {
-        include(this)
-    }
-
-    /**
      * Include a field originating from a class function.
      */
     operator fun KFunction<*>.unaryPlus() {
@@ -72,18 +84,16 @@ sealed class BaseTypeBuilder<R : Any>(
     }
 
     fun derive(
-        kclass: KClass<R>,
         nameFilter: List<String>,
         propFilter: List<KProperty1<R, *>>,
         funFilter: List<KFunction<*>>,
     ) {
-        deriveProperties(kclass, nameFilter, propFilter)
-        deriveFunctions(kclass, nameFilter, funFilter)
+        deriveProperties(nameFilter, propFilter)
+        deriveFunctions(nameFilter, funFilter)
         // TODO handle the case where a property and a function with the same name exist
     }
 
     fun deriveProperties(
-        kclass: KClass<R>,
         nameFilter: List<String>,
         propFilter: List<KProperty1<R, *>>,
     ) {
@@ -92,13 +102,12 @@ sealed class BaseTypeBuilder<R : Any>(
         }.filter {
             it !in propFilter
         }.forEach {
-            log.debug("[derive] ${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
+            context.log.debug("[derive] ${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
             fields += PropertyField(it, it.name, null, instance)
         }
     }
 
     fun deriveFunctions(
-        kclass: KClass<R>,
         nameFilter: List<String>,
         funFilter: List<KFunction<*>>,
     ) {
@@ -107,68 +116,97 @@ sealed class BaseTypeBuilder<R : Any>(
         }.filter {
             it !in funFilter
         }.forEach {
-            log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
+            context.log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
             fields += FunctionField(it, it.name, null, instance, context)
         }
     }
 
     /**
      * Include fields based on properties and functions present in the backing class.
+     *
+     * @param exclusionsBuilder allows you to configure exclusion rules, defaults to a set of known functions.
      */
     @SchemaDsl
     inline fun derive(exclusionsBuilder: ExclusionFilterBuilder<R>.() -> Unit = {}) {
         val exclusions = ExclusionFilterBuilder<R>().apply(exclusionsBuilder)
-        derive(kclass, exclusions.nameExclusions, exclusions.propExclusions, exclusions.funExclusions)
+        derive(exclusions.nameExclusions, exclusions.propExclusions, exclusions.funExclusions)
     }
 
+    /**
+     * Include fields based on properties present in the backing class.
+     *
+     * @param exclusionsBuilder allows you to configure exclusion rules, defaults to no exclusions.
+     */
     @SchemaDsl
     inline fun deriveProperties(exclusionsBuilder: PropertyExclusionFilterBuilder<R>.() -> Unit = {}) {
         val exclusions = PropertyExclusionFilterBuilder<R>().apply(exclusionsBuilder)
-        deriveProperties(kclass, exclusions.nameExclusions, exclusions.propExclusions)
+        deriveProperties(exclusions.nameExclusions, exclusions.propExclusions)
     }
 
+    /**
+     * Include fields based on functions present in the backing class.
+     *
+     * @param exclusionsBuilder allows you to configure exclusion rules, defaults to a set of known functions.
+     */
     @SchemaDsl
     inline fun deriveFunctions(exclusionsBuilder: FunctionExclusionFilterBuilder.() -> Unit = {}) {
         val exclusions = FunctionExclusionFilterBuilder().apply(exclusionsBuilder)
-        deriveFunctions(kclass, exclusions.nameExclusions, exclusions.funExclusions)
+        deriveFunctions(exclusions.nameExclusions, exclusions.funExclusions)
     }
 
     //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
     // TODO explore the possibility of making these functions inline to remove the call to resolver.reflect()
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
     fun <O> field(
         name: String,
-        resolver: suspend R.() -> O
+        fetcher: suspend R.() -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
             emptyList(),
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource()
                 )
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O> String.invoke(resolver: suspend R.() -> O) {
-        field(this, resolver)
+    operator fun <O> String.invoke(fetcher: suspend R.() -> O) {
+        field(this, fetcher)
     }
 
     // TODO Maybe inlining could be better to obtain the type of A
     // We need to reflect the lambda anyway to get param names
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A> field(
         name: String,
-        resolver: suspend R.(A) -> O
+        fetcher: suspend R.(A) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -178,25 +216,36 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A
                 )
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A> String.invoke(resolver: suspend R.(A) -> O) {
-        field(this, resolver)
+    operator fun <O, A> String.invoke(fetcher: suspend R.(A) -> O) {
+        field(this, fetcher)
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B> field(
         name: String,
-        resolver: suspend R.(A, B) -> O
+        fetcher: suspend R.(A, B) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -207,7 +256,7 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A,
                     arg1.resolve(it) as B
@@ -215,18 +264,29 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A, B> String.invoke(resolver: suspend R.(A, B) -> O) {
-        field(this, resolver)
+    operator fun <O, A, B> String.invoke(fetcher: suspend R.(A, B) -> O) {
+        field(this, fetcher)
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C> field(
         name: String,
-        resolver: suspend R.(A, B, C) -> O
+        fetcher: suspend R.(A, B, C) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -238,7 +298,7 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A,
                     arg1.resolve(it) as B,
@@ -247,18 +307,29 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A, B, C> String.invoke(resolver: suspend R.(A, B, C) -> O) {
-        field(this, resolver)
+    operator fun <O, A, B, C> String.invoke(fetcher: suspend R.(A, B, C) -> O) {
+        field(this, fetcher)
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
-        resolver: suspend R.(A, B, C, D) -> O
+        fetcher: suspend R.(A, B, C, D) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -271,7 +342,7 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A,
                     arg1.resolve(it) as B,
@@ -281,18 +352,29 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A, B, C, D> String.invoke(resolver: suspend R.(A, B, C, D) -> O) {
-        field(this, resolver)
+    operator fun <O, A, B, C, D> String.invoke(fetcher: suspend R.(A, B, C, D) -> O) {
+        field(this, fetcher)
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E> field(
         name: String,
-        resolver: suspend R.(A, B, C, D, E) -> O
+        fetcher: suspend R.(A, B, C, D, E) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -306,7 +388,7 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A,
                     arg1.resolve(it) as B,
@@ -317,18 +399,29 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A, B, C, D, E> String.invoke(resolver: suspend R.(A, B, C, D, E) -> O) {
-        field(this, resolver)
+    operator fun <O, A, B, C, D, E> String.invoke(fetcher: suspend R.(A, B, C, D, E) -> O) {
+        field(this, fetcher)
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param name the name of the field
+     * @param fetcher the code executed behind this field
+     */
     @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
-        resolver: suspend R.(A, B, C, D, E, F) -> O
+        fetcher: suspend R.(A, B, C, D, E, F) -> O
     ) {
-        val reflected = resolver.reflect()!!
+        val reflected = fetcher.reflect()!!
         val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
@@ -343,7 +436,7 @@ sealed class BaseTypeBuilder<R : Any>(
             reflected.returnType.unwrapAsyncType(),
             args,
             suspendFetcher {
-                resolver(
+                fetcher(
                     instance ?: it.getSource(),
                     arg0.resolve(it) as A,
                     arg1.resolve(it) as B,
@@ -355,30 +448,41 @@ sealed class BaseTypeBuilder<R : Any>(
             })
     }
 
+    /**
+     * Declare a custom field.
+     *
+     * @param fetcher the code executed behind this field
+     */
     @SchemaDsl
-    operator fun <O, A, B, C, D, E, F> String.invoke(resolver: suspend R.(A, B, C, D, E, F) -> O) {
-        field(this, resolver)
+    operator fun <O, A, B, C, D, E, F> String.invoke(fetcher: suspend R.(A, B, C, D, E, F) -> O) {
+        field(this, fetcher)
     }
 }
 
+/**
+ * DSL for building a GraphQL interface.
+ */
 class InterfaceBuilder<R : Any>(
     kclass: KClass<R>,
-    name: String? = null,
-    description: String? = null,
-    context: SchemaContext
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, context) {
+    name: String,
+    description: String?,
+    context: SchemaBuilderContext
+) : BaseTypeBuilder<R>(kclass, null, name, description, context) {
 
     init {
         require(kclass.isValidClassForInterface())
     }
 }
 
+/**
+ * DSL for building a GraphQL Object type.
+ */
 class TypeBuilder<R : Any>(
     kclass: KClass<R>,
-    name: String?,
-    description: String? = null,
-    context: SchemaContext
-) : BaseTypeBuilder<R>(kclass, null, name ?: kclass.simpleName!!, description, context) {
+    name: String,
+    description: String?,
+    context: SchemaBuilderContext
+) : BaseTypeBuilder<R>(kclass, null, name, description, context) {
 
     init {
         require(kclass.isValidClassForType())
@@ -390,16 +494,22 @@ class TypeBuilder<R : Any>(
     val interfaces = mutableListOf<KClass<*>>()
 
     /**
-     * Declare this type as implementing another interface.
+     * Declare this type as implementing interface [I].
+     *
+     * @param I the interface this type should be implementing
      */
     @SchemaDsl
     inline fun <reified I : Any> inter() {
-        // TODO we should check that R : I
+        // TODO check that R : I
         interfaces += I::class
+        // TODO include interface fields
     }
 }
 
-class OperationBuilder<R : Any>(name: String, instance: R, context: SchemaContext) :
+/**
+ * DSL for building a root object.
+ */
+class OperationBuilder<R : Any>(name: String, instance: R, context: SchemaBuilderContext) :
     BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, null, context) {
 
     init {

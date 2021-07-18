@@ -6,7 +6,7 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.typeOf
 
-internal fun KParameter.createArgument(context: SchemaContext): Argument {
+internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument {
     return when (type.kclass) {
         DataFetchingEnvironment::class -> EnvArgument(this)
         in context.idCoercers -> IdArgument(this, context.idCoercers[type.kclass]!!)
@@ -54,9 +54,9 @@ class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>
     override fun resolve(input: Any?): Any = throw UnsupportedOperationException("No nested env")
 }
 
-class InputObjectArgument(name: String, type: KType, context: SchemaContext) : Argument(name, type) {
+class InputObjectArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
 
-    constructor(param: KParameter, context: SchemaContext) : this(
+    constructor(param: KParameter, context: SchemaBuilderContext) : this(
         param.name ?: "anon",
         param.type,
         context

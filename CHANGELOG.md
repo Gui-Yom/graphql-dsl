@@ -27,6 +27,7 @@ query {
 
 - New test framework for your graphql code based on graphql-dsl under `/graphql-dsl-test`
 - Working input objects, can reference other input objects, can self reference, no list of input object
+- Allow default name for scalars
 
 ### Fixed
 

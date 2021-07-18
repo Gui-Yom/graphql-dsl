@@ -4,7 +4,7 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 
@@ -12,21 +12,10 @@ import kotlin.reflect.typeOf
 annotation class SchemaDsl
 
 /**
- * Called when converting a string input to your Id class
+ * Holds the root DSL.
  */
-typealias IdCoercer<T> = (value: String?) -> T?
-
-internal val log = LoggerFactory.getLogger(SchemaSpec::class.java)
-
-interface SchemaContext {
-    val idCoercers: Map<KClass<*>, IdCoercer<*>>
-    val inputs: List<InputBuilder>
-
-    fun isInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass } != null
-}
-
 @SchemaDsl
-class SchemaSpec : SchemaContext, DescriptionPublisher {
+class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionPublisher {
 
     override val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
@@ -48,21 +37,26 @@ class SchemaSpec : SchemaContext, DescriptionPublisher {
     // For the DescriptionPublisher implementation
     override var nextDesc: String? = null
 
+    /**
+     * Define [T] as being a GraphQL scalar.
+     *
+     * @param coercing the [Coercing] implementation for this scalar
+     * @param name the name as displayed in the schema, defaults to the class name
+     * @param builder a hook just before constructing the final type
+     */
     @SchemaDsl
     inline fun <reified T : Any> scalar(
-        name: String,
         coercing: Coercing<T, *>,
+        name: String = T::class.deriveName(),
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        val kclass = T::class
-        scalars += ScalarBuilder(kclass, name, coercing, takeDesc(), builder)
+        scalars += ScalarBuilder(T::class, name, coercing, takeDesc(), builder)
     }
 
     /**
-     * Use the given class as the GraphQL ID
+     * Use [T] as the GraphQL ID
      *
-     * @param coercer since graphql will parse the field as a string we need a
-     *                  manual conversion to our type to coerce it in input position
+     * @param coercer since graphql will parse the field as a string we need manual conversion to our type to coerce it in input position. By default, this takes a constructor of [T] with a single [String] parameter.
      */
     @SchemaDsl
     inline fun <reified T : Any> id(noinline coercer: IdCoercer<T>? = null) {
@@ -74,67 +68,119 @@ class SchemaSpec : SchemaContext, DescriptionPublisher {
         idCoercers += T::class to coercer
     }
 
+    /**
+     * Declare [T] as a GraphQL enum.
+     *
+     * @param name the name as displayed in the schema. Defaults to the class name.
+     * @param builder a hook just before constructing the final type
+     */
     @SchemaDsl
     inline fun <reified T : Enum<T>> enum(
-        name: String? = null,
+        name: String = T::class.deriveName(),
         noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
-        val kclass = T::class
-        enums += EnumBuilder(kclass, name ?: kclass.simpleName!!, takeDesc(), builder)
+        enums += EnumBuilder(T::class, name, takeDesc(), builder)
     }
 
+    /**
+     * Declare [T] as a GraphQL Input Object.
+     * The ideal is for [T] to be a data class. The input object fields will be derived automatically from the primary constructor parameters.
+     *
+     * @param name the name as displayed in the schema. Defaults to the class name.
+     * @param builder a hook just before constructing the final type
+     */
     @SchemaDsl
     inline fun <reified T : Any> input(
-        name: String? = null,
+        name: String = T::class.deriveName(),
         noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
-        val kclass = T::class
-        inputs += InputBuilder(kclass, name ?: kclass.simpleName!!, takeDesc(), builder)
+        inputs += InputBuilder(T::class, name, takeDesc(), builder)
     }
 
+    /**
+     * Declare [T] as a GraphQL Interface.
+     * [T] should be a Kotlin interface, sealed class or abstract class.
+     *
+     * @param name the name as displayed in the schema. Defaults to the class name.
+     * @param configure the DSL to construct this interface. Defaults to including all fields.
+     */
     @SchemaDsl
     inline fun <reified T : Any> inter(
-        name: String? = null,
+        name: String = T::class.deriveName(),
         configure: InterfaceBuilder<T>.() -> Unit = { derive() }
     ) {
-        val kclass = T::class
-        interfaces += InterfaceBuilder(kclass, name, takeDesc(), this).apply(configure)
+        interfaces += InterfaceBuilder(T::class, name, takeDesc(), this).apply(configure)
     }
 
+    /**
+     * Declare [T] as a GraphQL Object type.
+     *
+     * @param name the name as displayed in the schema. Defaults to the class name.
+     * @param configure the DSL to construct this object type. Defaults to including all fields.
+     */
     @SchemaDsl
     inline fun <reified T : Any> type(
-        name: String? = null,
+        name: String = T::class.deriveName(),
         configure: TypeBuilder<T>.() -> Unit = { derive() }
     ) {
-        val kclass = T::class
-        types += TypeBuilder(kclass, name, takeDesc(), this).apply(configure)
+        types += TypeBuilder(T::class, name, takeDesc(), this).apply(configure)
     }
 
+    /**
+     * Use [T] as the root query object.
+     *
+     * @param configure the DSL to construct this root object. Defaults to including all fields.
+     */
     @SchemaDsl
     inline fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.query = OperationBuilder("Query", query, this).apply(configure)
     }
 
+    /**
+     * Create the root query object.
+     *
+     * @param configure the DSL to construct this root object.
+     */
     @SchemaDsl
     inline fun query(configure: OperationBuilder<Any>.() -> Unit) {
         query(object {}, configure)
     }
 
+    /**
+     * Use [T] as the root mutation object.
+     *
+     * @param configure the DSL to construct this root object. Defaults to including all fields.
+     */
     @SchemaDsl
     inline fun <T : Any> mutation(mutation: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.mutation = OperationBuilder("Mutation", mutation, this).apply(configure)
     }
 
+    /**
+     * Create the root mutation object.
+     *
+     * @param configure the DSL to construct this root object.
+     */
     @SchemaDsl
     inline fun mutation(configure: OperationBuilder<Any>.() -> Unit) {
         mutation(object {}, configure)
     }
 
+    /**
+     * Use [T] as the root subscription object.
+     *
+     * @param configure the DSL to construct this root object. Defaults to including all fields.
+     */
     @SchemaDsl
     inline fun <T : Any> subscription(subscription: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
         this.subscription = OperationBuilder("Subscription", subscription, this).apply(configure)
     }
 
+    /**
+     * Create the root subscription object.
+     *
+     * @param configure the DSL to construct this root object.
+     */
     @SchemaDsl
     inline fun subscription(configure: OperationBuilder<Any>.() -> Unit) {
         subscription(object {}, configure)

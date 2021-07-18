@@ -7,11 +7,18 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 
+/**
+ * The base object for building a schema.
+ *
+ * @param configure the DSL to create the schema.
+ *
+ * @see SchemaSpec
+ */
 class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
-    internal val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
+    private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
 
-    private val schemaBuilder = SchemaSpec().apply(configure)
+    private val schemaBuilder = SchemaSpec(log).apply(configure)
 
     // A kotlin class to its mapped graphql type
     private val names = mutableMapOf<KClass<*>, String>()
