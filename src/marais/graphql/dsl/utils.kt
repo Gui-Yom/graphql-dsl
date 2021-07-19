@@ -25,6 +25,8 @@ internal fun KClass<*>.isValidClassForInterface(): Boolean = isSealed || isAbstr
  */
 internal fun KClass<*>.coerceWithList(): Boolean = isSubclassOf(Iterable::class)
 
+internal fun KClass<*>.isEnum() = isSubclassOf(Enum::class)
+
 /**
  * Create a displayable name for this class for inclusion in a schema
  */

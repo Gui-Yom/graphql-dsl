@@ -26,6 +26,17 @@ class TestInputs {
     }
 
     @Test
+    fun `enum input`() = withSchema({
+        enum<Baz>()
+
+        query {
+            "test" { value: Baz -> value.ordinal }
+        }
+    }) {
+        """query { first: test(value: VALUE0) }""" shouldReturns mapOf("first" to 0)
+    }
+
+    @Test
     fun `input object`() {
         data class MyInput(
             val data: String,

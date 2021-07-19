@@ -15,8 +15,11 @@ internal fun createArgument(name: String, type: KType, context: SchemaBuilderCon
         DataFetchingEnvironment::class -> EnvArgument(name)
         List::class -> ListArgument(name, type, context)
         in context.idCoercers -> IdArgument(name, type, context.idCoercers[type.kclass]!!)
-        else -> if (context.isInputType(type.kclass)) InputObjectArgument(name, type, context)
-        else NormalArgument(name, type)
+        else -> when {
+            type.kclass.isEnum() -> EnumArgument(name, type)
+            context.isInputType(type.kclass) -> InputObjectArgument(name, type, context)
+            else -> NormalArgument(name, type)
+        }
     }
 }
 
@@ -81,10 +84,18 @@ private class InputObjectArgument(name: String, type: KType, context: SchemaBuil
     }
 }
 
-// For scalars and enums
+// For scalars
 private class NormalArgument(name: String, type: KType) : Argument(name, type) {
 
     override fun resolve(input: Any?): Any? = input
+}
+
+// For enums
+private class EnumArgument(name: String, type: KType) : Argument(name, type) {
+
+    private val constants = type.kclass.java.enumConstants as Array<Enum<*>>
+
+    override fun resolve(input: Any?): Any? = constants.find { it.name == input }
 }
 
 // For List
