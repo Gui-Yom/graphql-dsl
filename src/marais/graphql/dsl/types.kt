@@ -207,14 +207,13 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),
@@ -246,15 +245,14 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A, B) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
+        val arg1 = params[1].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0, arg1),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),
@@ -287,16 +285,15 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A, B, C) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
+        val arg1 = params[1].createArgument(context)
+        val arg2 = params[2].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0, arg1, arg2),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),
@@ -330,17 +327,16 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A, B, C, D) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
+        val arg1 = params[1].createArgument(context)
+        val arg2 = params[2].createArgument(context)
+        val arg3 = params[3].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0, arg1, arg2, arg3),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),
@@ -375,18 +371,17 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A, B, C, D, E) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg4 = params[4].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
+        val arg1 = params[1].createArgument(context)
+        val arg2 = params[2].createArgument(context)
+        val arg3 = params[3].createArgument(context)
+        val arg4 = params[4].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0, arg1, arg2, arg3, arg4),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),
@@ -422,19 +417,18 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.(A, B, C, D, E, F) -> O
     ) {
         val reflected = fetcher.reflect()!!
-        val args = mutableListOf<Argument>()
         val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg1 = params[1].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg2 = params[2].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg3 = params[3].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg4 = params[4].createArgument(context).also { if (it !is EnvArgument) args += it }
-        val arg5 = params[5].createArgument(context).also { if (it !is EnvArgument) args += it }
+        val arg0 = params[0].createArgument(context)
+        val arg1 = params[1].createArgument(context)
+        val arg2 = params[2].createArgument(context)
+        val arg3 = params[3].createArgument(context)
+        val arg4 = params[4].createArgument(context)
+        val arg5 = params[5].createArgument(context)
         fields += CustomField(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
-            args,
+            listOf(arg0, arg1, arg2, arg3, arg4, arg5),
             suspendFetcher {
                 fetcher(
                     instance ?: it.getSource(),

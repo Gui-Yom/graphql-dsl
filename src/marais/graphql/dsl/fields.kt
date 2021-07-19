@@ -28,7 +28,7 @@ class CustomField(
     override val dataFetcher: DataFetcher<Any?>
 ) : Field(name, description)
 
-class PropertyField<R>(
+internal class PropertyField<R>(
     property: KProperty1<R, Any?>,
     name: String,
     description: String?,
@@ -40,8 +40,7 @@ class PropertyField<R>(
     override val arguments: List<Argument> = emptyList()
 }
 
-// FIXME it is currently impossible to specify the receiver for the KFunction
-class FunctionField<R>(
+internal class FunctionField<R>(
     func: KFunction<Any?>,
     name: String,
     description: String?,
@@ -52,18 +51,11 @@ class FunctionField<R>(
     override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()
 
-    // Might include special types that should not appear on the schema
-    // They are used to call the function
-    val funcArgs = mutableListOf<Argument>()
-
     init {
         for (it in func.valueParameters) {
-            val arg = it.createArgument(context)
-            funcArgs += arg
-            if (arg !is EnvArgument)
-                arguments += arg
+            arguments += it.createArgument(context)
         }
     }
 
-    override val dataFetcher: DataFetcher<Any?> = functionFetcher(func, funcArgs, receiver = instance)
+    override val dataFetcher: DataFetcher<Any?> = functionFetcher(func, arguments, receiver = instance)
 }

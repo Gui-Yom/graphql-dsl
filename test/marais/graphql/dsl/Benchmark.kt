@@ -50,7 +50,7 @@ class Benchmark {
                 }
                 include(Foo::field)
                 // Can be a custom function
-                field("inc") { _: DataFetchingEnvironment ->
+                field("inc") { env: DataFetchingEnvironment ->
                     field + 1
                 }
             }

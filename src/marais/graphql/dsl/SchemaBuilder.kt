@@ -204,7 +204,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
         return GraphQLFieldDefinition.newFieldDefinition()
             .name(field.name)
             .description(field.description)
-            .arguments(field.arguments.map(this::makeArgument))
+            .arguments(field.arguments.filter { it.isShownInSchema }.map(this::makeArgument))
             .type(resolveOutputType(field.outputType))
             .build()
     }

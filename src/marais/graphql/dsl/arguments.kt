@@ -7,14 +7,23 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.typeOf
 
 internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument {
+    return createArgument(name ?: throw Exception("Parameter $this must have a name (no _ allowed)"), type, context)
+}
+
+internal fun createArgument(name: String, type: KType, context: SchemaBuilderContext): Argument {
     return when (type.kclass) {
-        DataFetchingEnvironment::class -> EnvArgument(this)
-        in context.idCoercers -> IdArgument(this, context.idCoercers[type.kclass]!!)
-        else -> if (context.isInputType(type.kclass)) InputObjectArgument(this, context) else NormalArgument(this)
+        DataFetchingEnvironment::class -> EnvArgument(name)
+        List::class -> ListArgument(name, type, context)
+        in context.idCoercers -> IdArgument(name, type, context.idCoercers[type.kclass]!!)
+        else -> if (context.isInputType(type.kclass)) InputObjectArgument(name, type, context)
+        else NormalArgument(name, type)
     }
 }
 
 sealed class Argument(val name: String, val type: KType) {
+
+    internal val isShownInSchema: Boolean
+        get() = this !is EnvArgument
 
     /**
      * Resolve this argument directly from the environment.
@@ -30,37 +39,26 @@ sealed class Argument(val name: String, val type: KType) {
     abstract fun resolve(input: Any?): Any?
 }
 
-class IdArgument(name: String, type: KType, private val idCoercer: IdCoercer<*>) : Argument(name, type) {
-
-    constructor(param: KParameter, idCoercer: IdCoercer<*>) : this(
-        param.name ?: "anon",
-        param.type,
-        idCoercer
-    )
+/**
+ * For the ID scalar
+ */
+private class IdArgument(name: String, type: KType, private val idCoercer: IdCoercer<*>) : Argument(name, type) {
 
     override fun resolve(input: Any?): Any? {
         return idCoercer.invoke(input as? String?)
     }
 }
 
-class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>()) {
-
-    constructor(param: KParameter) : this(
-        param.name ?: "anon"
-    )
+// For injecting DataFetchingEnvironment instance
+private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>()) {
 
     override fun resolve(env: DataFetchingEnvironment): DataFetchingEnvironment = env
 
     override fun resolve(input: Any?): Any = throw UnsupportedOperationException("No nested env")
 }
 
-class InputObjectArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
-
-    constructor(param: KParameter, context: SchemaBuilderContext) : this(
-        param.name ?: "anon",
-        param.type,
-        context
-    )
+// For input objects
+private class InputObjectArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
 
     private val constructor = type.kclass.primaryConstructor!!
     private val constructorArguments = constructor.parameters.map {
@@ -83,12 +81,21 @@ class InputObjectArgument(name: String, type: KType, context: SchemaBuilderConte
     }
 }
 
-class NormalArgument(name: String, type: KType) : Argument(name, type) {
-
-    constructor(param: KParameter) : this(
-        param.name ?: "anon",
-        param.type,
-    )
+// For scalars and enums
+private class NormalArgument(name: String, type: KType) : Argument(name, type) {
 
     override fun resolve(input: Any?): Any? = input
+}
+
+// For List
+private class ListArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
+
+    val innerArg = createArgument("", type.unwrap(), context)
+
+    override fun resolve(input: Any?): Any? {
+        if (input == null) return null
+        if (input !is List<*>) throw Exception("List input requires List as input")
+
+        return input.map { innerArg.resolve(it) }
+    }
 }
