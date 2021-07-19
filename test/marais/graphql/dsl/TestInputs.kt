@@ -95,6 +95,32 @@ class TestInputs {
     }
 
     @Test
+    fun `fields in input object`() {
+
+        data class MyInput(
+            val data: String
+        ) {
+
+            // Secondary constructors should be ignored
+            constructor(data: Int) : this(data.toString())
+
+            // Additional fields should be ignored too
+            val ignored: String
+                get() = "$data !"
+        }
+
+        withSchema({
+            input<MyInput>()
+
+            query {
+                "test" { input: MyInput -> input.ignored }
+            }
+        }) {
+            """query { test(input: { data: "hello" }) }""" shouldReturns mapOf("test" to "hello !")
+        }
+    }
+
+    @Test
     fun `list input`() = withSchema({
         query {
             "test" { numbers: List<Int> -> numbers.map { it.toString() } }
