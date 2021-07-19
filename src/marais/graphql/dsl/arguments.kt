@@ -3,7 +3,6 @@ package marais.graphql.dsl
 import graphql.schema.DataFetchingEnvironment
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
-import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.typeOf
 
 internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument {
@@ -63,15 +62,15 @@ private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvi
 // For input objects
 private class InputObjectArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
 
-    private val constructor = type.kclass.primaryConstructor!!
-    private val constructorArguments = constructor.parameters.map {
-        if (it.type.classifier == type.classifier)
+    private val constructor = context.getInputType(type.kclass)!!.constructor
+    private val constructorArguments = context.getInputType(type.kclass)!!.fields.map { (fname, ftype) ->
+        if (ftype.classifier == type.classifier)
         // Check for nullable self reference
         // We return 'this' to prevent infinite recursion by calling another constructor for the same type
         // The second item of the pair overwrites the argument name in resolve if non-null
-            if (it.type.isMarkedNullable) this to it.name!!
-            else throw Exception("Non null self reference in input object: ${it.type}")
-        else it.createArgument(context) to null
+            if (ftype.isMarkedNullable) this to fname
+            else throw Exception("Non null self reference in input object: $ftype")
+        else createArgument(fname, ftype, context) to null
     }
 
     override fun resolve(input: Any?): Any? {

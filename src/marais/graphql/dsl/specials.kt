@@ -5,7 +5,7 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.primaryConstructor
 
 data class ScalarBuilder(
@@ -29,14 +29,7 @@ data class InputBuilder(
     val description: String?,
     val builder: GraphQLInputObjectType.Builder.() -> Unit
 ) {
-    val fields = mutableMapOf<String, KType>()
-
-    init {
-        // We only derive input fields from primary constructor parameters
-        val constructor =
-            kclass.primaryConstructor ?: throw Exception("Can't find a primary constructor for ${kclass.deriveName()}")
-
-        for (param in constructor.parameters)
-            fields[param.name!!] = param.type
-    }
+    internal val constructor: KFunction<*> =
+        kclass.primaryConstructor ?: throw Exception("Can't find a primary constructor for ${kclass.deriveName()}")
+    internal val fields = constructor.parameters.map { it.name!! to it.type }
 }

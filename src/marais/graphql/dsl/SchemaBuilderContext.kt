@@ -16,5 +16,7 @@ abstract class SchemaBuilderContext(internal val log: Logger) {
     abstract val idCoercers: Map<KClass<*>, IdCoercer<*>>
     abstract val inputs: List<InputBuilder>
 
-    fun isInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass } != null
+    internal fun getInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass }
+
+    internal fun isInputType(kclass: KClass<*>) = getInputType(kclass) != null
 }
