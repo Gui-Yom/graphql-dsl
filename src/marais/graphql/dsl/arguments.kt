@@ -64,19 +64,21 @@ class InputObjectArgument(name: String, type: KType, context: SchemaBuilderConte
 
     private val constructor = type.kclass.primaryConstructor!!
     private val constructorArguments = constructor.parameters.map {
-        // TODO verify nullability of self reference
         if (it.type.classifier == type.classifier)
-            if (it.type.isMarkedNullable) this
+        // Check for nullable self reference
+        // We return 'this' to prevent infinite recursion by calling another constructor for the same type
+        // The second item of the pair overwrites the argument name in resolve if non-null
+            if (it.type.isMarkedNullable) this to it.name!!
             else throw Exception("Non null self reference in input object: ${it.type}")
-        else it.createArgument(context)
+        else it.createArgument(context) to null
     }
 
     override fun resolve(input: Any?): Any? {
         if (input == null) return null
         if (input !is Map<*, *>) throw Exception("Input object requires a Map as argument")
 
-        return constructor.call(*constructorArguments.map { arg ->
-            arg.resolve(input[arg.name])
+        return constructor.call(*constructorArguments.map { (arg, nestedName) ->
+            arg.resolve(input[nestedName ?: arg.name])
         }.toTypedArray())
     }
 }
