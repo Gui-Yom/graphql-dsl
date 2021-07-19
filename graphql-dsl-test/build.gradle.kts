@@ -10,16 +10,12 @@ repositories {
 }
 
 val kotlinVersion: String by project
-val slf4jVersion: String by project
 val gqlVersion: String by project
 
 dependencies {
     // Kotlin
     implementation(kotlin("stdlib", kotlinVersion))
     implementation(kotlin("test-junit5", kotlinVersion))
-
-    // Logging
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
     // GraphQL
     implementation("com.graphql-java:graphql-java:$gqlVersion")
@@ -53,10 +49,6 @@ tasks {
         kotlinOptions {
             jvmTarget = JavaVersion.VERSION_11.toString()
         }
-    }
-
-    test {
-        useJUnitPlatform()
     }
 }
 

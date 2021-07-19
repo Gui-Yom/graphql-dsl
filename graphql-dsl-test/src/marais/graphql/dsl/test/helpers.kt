@@ -6,11 +6,8 @@ import graphql.schema.GraphQLSchema
 import marais.graphql.dsl.SchemaBuilder
 import marais.graphql.dsl.SchemaSpec
 import marais.graphql.dsl.print
-import org.slf4j.LoggerFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-
-private val log = LoggerFactory.getLogger("marais.graphql.dsl.test.Helpers")
 
 /**
  * Construct a GraphQL engine following the given [SchemaSpec].
@@ -20,7 +17,7 @@ private val log = LoggerFactory.getLogger("marais.graphql.dsl.test.Helpers")
  */
 fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() -> Unit) {
     val schema = SchemaBuilder(schemaSpec).build()
-    log.debug(schema.print(includeDirectives = false))
+    println(schema.print(includeDirectives = false))
     block(SchemaTestContext(GraphQL.newGraphQL(schema).build(), schema))
 }
 
