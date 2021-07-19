@@ -7,6 +7,7 @@ import marais.graphql.dsl.SchemaBuilder
 import marais.graphql.dsl.SchemaSpec
 import marais.graphql.dsl.print
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 /**
@@ -19,6 +20,15 @@ fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() ->
     val schema = SchemaBuilder(schemaSpec).build()
     println(schema.print(includeDirectives = false))
     block(SchemaTestContext(GraphQL.newGraphQL(schema).build(), schema))
+}
+
+/**
+ * Assert the given schema fails.
+ */
+fun assertSchemaFails(schemaSpec: SchemaSpec.() -> Unit) {
+    assertFails {
+        SchemaBuilder(schemaSpec).build()
+    }
 }
 
 class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
