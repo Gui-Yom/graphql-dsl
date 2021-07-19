@@ -136,7 +136,6 @@ println(schema.print())
 - Ensure that as many checks as possible are done during the first step of schema building so errors are thrown with a
   useful line number (fail fast, maybe change the way the schema is generated)
 - Map everything at initialization so minimal work is done at runtime
-- Cache lookups to input objects constructors and parameters
 - Explore a way to verify and generate the schema at compile time through a compiler plugin or a gradle plugin
 
 ## Installation
@@ -183,7 +182,7 @@ fun testMyQuery() = withSchema({
 
         // This checks that there are no errors and print them in case of failure
         assertQueryReturns("""query { test(a: 21) }""", mapOf("test" to 42))
-        // equivalent to
+        // also equivalent to
         """query { test(a: 21) }""" shouldReturns mapOf("test" to 42)
     }
 ```

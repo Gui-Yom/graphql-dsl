@@ -7,6 +7,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0]
+
+### Added
+
+- Support list of input objects
+- Support enum values as input
+
+### Fixed
+
+- Correctly derive input object fields from primary constructor
+- Fix self referencing input objects
+
+## [0.5.0]
+
 ### Added
 
 - Id type coercer can be automatically derived from the class constructor assuming such constructor
@@ -47,8 +61,12 @@ query {
 
 ## [0.3.2] - 2021-07-11
 
-[Unreleased]: https://github.com/Gui-Yom/nuance/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.6.0...HEAD
 
-[0.4.0]: https://github.com/Gui-Yom/nuance/releases/tag/v0.4.0
+[0.6.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.5.0...v0.6.0
 
-[0.3.2]: https://github.com/Gui-Yom/nuance/releases/tag/v0.3.2
+[0.5.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.4.0...v0.5.0
+
+[0.4.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.3.2...v0.4.0
+
+[0.3.2]: https://github.com/Gui-Yom/graphql-dsl/releases/tag/v0.3.2
