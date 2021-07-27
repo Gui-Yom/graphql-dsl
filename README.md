@@ -116,14 +116,13 @@ println(schema.print())
 - Suspend, Deferred and CompletableFuture support for async fields
 - Flow and Publisher support for subscription fields
 - Suspend custom fields (fields without a property or a function)
-- Schema descriptions directly in the DSL (no descriptions on derived fields)
+- Schema element descriptions through annotations or directly in the dsl
 - Map type support through automatic conversion to List<MapEntry>
 
 ## Planned features
 
 - Support injecting GraphQLContext field parameter
 - Non suspend custom fields
-- Description on derived fields (need annotations)
 - Support primitive arrays and object arrays
 - Support list of input objects
 - Field argument default value (need annotations)

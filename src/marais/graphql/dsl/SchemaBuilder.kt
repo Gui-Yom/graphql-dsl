@@ -212,6 +212,7 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
     private fun makeArgument(argument: Argument): GraphQLArgument {
         return GraphQLArgument.newArgument()
             .name(argument.name)
+            .description(argument.description)
             .type(resolveInputType(argument.type))
             .build()
     }

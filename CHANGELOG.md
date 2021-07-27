@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Support descriptions on derived fields, and any other primitive, with @GraphQLDescription annotations. The dsl
+  description always has priority.
+
 ## [0.6.0]
 
 ### Added

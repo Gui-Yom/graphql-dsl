@@ -33,7 +33,7 @@ internal class PropertyField<R>(
     name: String,
     description: String?,
     instance: R? = null
-) : Field(name, description) {
+) : Field(name, description ?: property.extractDesc()) {
 
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.unwrapAsyncType()
@@ -46,7 +46,7 @@ internal class FunctionField<R>(
     description: String?,
     instance: R?,
     context: SchemaBuilderContext
-) : Field(name, description) {
+) : Field(name, description ?: func.extractDesc()) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()

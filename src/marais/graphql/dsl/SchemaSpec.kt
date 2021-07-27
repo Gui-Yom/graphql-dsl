@@ -15,7 +15,7 @@ annotation class SchemaDsl
  * Holds the root DSL.
  */
 @SchemaDsl
-class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionPublisher {
+class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
 
     override val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarBuilder>()
@@ -133,6 +133,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionPublisher 
      */
     @SchemaDsl
     inline fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+        takeDesc() // Consume description
         this.query = OperationBuilder("Query", query, this).apply(configure)
     }
 
@@ -153,6 +154,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionPublisher 
      */
     @SchemaDsl
     inline fun <T : Any> mutation(mutation: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+        takeDesc() // Consume description
         this.mutation = OperationBuilder("Mutation", mutation, this).apply(configure)
     }
 
@@ -173,6 +175,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionPublisher 
      */
     @SchemaDsl
     inline fun <T : Any> subscription(subscription: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+        takeDesc() // Consume description
         this.subscription = OperationBuilder("Subscription", subscription, this).apply(configure)
     }
 

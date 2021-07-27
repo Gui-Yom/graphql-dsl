@@ -6,23 +6,28 @@ import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument {
-    return createArgument(name ?: throw Exception("Parameter $this must have a name (no _ allowed)"), type, context)
+    return createArgument(
+        name ?: throw Exception("Parameter $this must have a name (no _ allowed)"),
+        type,
+        extractDesc(),
+        context
+    )
 }
 
-internal fun createArgument(name: String, type: KType, context: SchemaBuilderContext): Argument {
+internal fun createArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext): Argument {
     return when (type.kclass) {
         DataFetchingEnvironment::class -> EnvArgument(name)
-        List::class -> ListArgument(name, type, context)
-        in context.idCoercers -> IdArgument(name, type, context.idCoercers[type.kclass]!!)
+        List::class -> ListArgument(name, type, desc, context)
+        in context.idCoercers -> IdArgument(name, type, desc, context.idCoercers[type.kclass]!!)
         else -> when {
-            type.kclass.isEnum() -> EnumArgument(name, type)
-            context.isInputType(type.kclass) -> InputObjectArgument(name, type, context)
-            else -> NormalArgument(name, type)
+            type.kclass.isEnum() -> EnumArgument(name, type, desc)
+            context.isInputType(type.kclass) -> InputObjectArgument(name, type, desc, context)
+            else -> NormalArgument(name, type, desc)
         }
     }
 }
 
-sealed class Argument(val name: String, val type: KType) {
+sealed class Argument(val name: String, val type: KType, val description: String?) {
 
     internal val isShownInSchema: Boolean
         get() = this !is EnvArgument
@@ -44,7 +49,8 @@ sealed class Argument(val name: String, val type: KType) {
 /**
  * For the ID scalar
  */
-private class IdArgument(name: String, type: KType, private val idCoercer: IdCoercer<*>) : Argument(name, type) {
+private class IdArgument(name: String, type: KType, desc: String?, private val idCoercer: IdCoercer<*>) :
+    Argument(name, type, desc) {
 
     override fun resolve(input: Any?): Any? {
         return idCoercer.invoke(input as? String?)
@@ -52,7 +58,7 @@ private class IdArgument(name: String, type: KType, private val idCoercer: IdCoe
 }
 
 // For injecting DataFetchingEnvironment instance
-private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>()) {
+private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>(), null) {
 
     override fun resolve(env: DataFetchingEnvironment): DataFetchingEnvironment = env
 
@@ -60,7 +66,8 @@ private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvi
 }
 
 // For input objects
-private class InputObjectArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
+private class InputObjectArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext) :
+    Argument(name, type, desc) {
 
     private val constructor = context.getInputType(type.kclass)!!.constructor
     private val constructorArguments = context.getInputType(type.kclass)!!.fields.map { (fname, ftype) ->
@@ -70,7 +77,7 @@ private class InputObjectArgument(name: String, type: KType, context: SchemaBuil
         // The second item of the pair overwrites the argument name in resolve if non-null
             if (ftype.isMarkedNullable) this to fname
             else throw Exception("Non null self reference in input object: $ftype")
-        else createArgument(fname, ftype, context) to null
+        else createArgument(fname, ftype, null, context) to null
     }
 
     override fun resolve(input: Any?): Any? {
@@ -84,13 +91,13 @@ private class InputObjectArgument(name: String, type: KType, context: SchemaBuil
 }
 
 // For scalars
-private class NormalArgument(name: String, type: KType) : Argument(name, type) {
+private class NormalArgument(name: String, type: KType, desc: String?) : Argument(name, type, desc) {
 
     override fun resolve(input: Any?): Any? = input
 }
 
 // For enums
-private class EnumArgument(name: String, type: KType) : Argument(name, type) {
+private class EnumArgument(name: String, type: KType, desc: String?) : Argument(name, type, desc) {
 
     private val constants = type.kclass.java.enumConstants as Array<Enum<*>>
 
@@ -98,9 +105,10 @@ private class EnumArgument(name: String, type: KType) : Argument(name, type) {
 }
 
 // For List
-private class ListArgument(name: String, type: KType, context: SchemaBuilderContext) : Argument(name, type) {
+private class ListArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext) :
+    Argument(name, type, desc) {
 
-    val innerArg = createArgument("", type.unwrap(), context)
+    val innerArg = createArgument("", type.unwrap(), null, context)
 
     override fun resolve(input: Any?): Any? {
         if (input == null) return null

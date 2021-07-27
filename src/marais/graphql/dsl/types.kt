@@ -15,12 +15,13 @@ sealed class BaseTypeBuilder<R : Any>(
     val kclass: KClass<R>,
     private val instance: R?,
     val name: String,
-    val description: String?,
+    description: String?,
     private val context: SchemaBuilderContext
-) : DescriptionPublisher {
+) : DescriptionHolder {
+    val description: String? = description ?: kclass.extractDesc()
     val fields: MutableList<Field> = mutableListOf()
 
-    // For the DescriptionPublisher implementation
+    // For the DescriptionHolder implementation
     override var nextDesc: String? = null
 
     /**
@@ -32,7 +33,7 @@ sealed class BaseTypeBuilder<R : Any>(
      */
     @SchemaDsl
     inline fun <reified T : Any> static(name: String, value: T) {
-        fields += CustomField(name, null, typeOf<T>(), emptyList(), StaticDataFetcher(value))
+        fields += CustomField(name, takeDesc(), typeOf<T>(), emptyList(), StaticDataFetcher(value))
     }
 
     /**
