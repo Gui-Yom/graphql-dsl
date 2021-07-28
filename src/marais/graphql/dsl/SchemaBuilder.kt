@@ -2,7 +2,7 @@ package marais.graphql.dsl
 
 import graphql.Scalars
 import graphql.schema.*
-import org.slf4j.LoggerFactory
+import org.apache.logging.log4j.LogManager
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
@@ -21,7 +21,7 @@ fun GraphQLSchema(spec: SchemaSpec.() -> Unit): GraphQLSchema {
  */
 class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
-    private val log = LoggerFactory.getLogger(SchemaBuilder::class.java)
+    private val log = LogManager.getLogger("GraphQLDsl")
 
     private val schemaSpec = SchemaSpec(log).apply(configure)
 

@@ -12,8 +12,7 @@ repositories {
 val kotlinVersion: String by project
 val ktxCoroutinesVersion: String by project
 val reactiveStreamsVersion: String by project
-val slf4jVersion: String by project
-val logbackVersion: String by project
+val log4jVersion: String by project
 val gqlVersion: String by project
 val junitVersion: String by project
 
@@ -31,14 +30,15 @@ dependencies {
     implementation("org.reactivestreams:reactive-streams:$reactiveStreamsVersion")
 
     // Logging
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
 
     // GraphQL
     api("com.graphql-java:graphql-java:$gqlVersion")
 
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testRuntimeOnly("ch.qos.logback:logback-classic:$logbackVersion")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
+    testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
     testImplementation(project(":graphql-dsl-test"))
 }
 

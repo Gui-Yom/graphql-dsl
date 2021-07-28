@@ -3,14 +3,11 @@ package marais.graphql.dsl
 import graphql.language.StringValue
 import graphql.schema.*
 import marais.graphql.dsl.test.withSchema
-import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class TestDsl {
-    private val log = LoggerFactory.getLogger(TestDsl::class.java)
-
     @Test
     fun testSimpleSchema() = withSchema({
         query {

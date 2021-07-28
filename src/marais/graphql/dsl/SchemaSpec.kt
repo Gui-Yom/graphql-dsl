@@ -4,7 +4,7 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLScalarType
-import org.slf4j.Logger
+import org.apache.logging.log4j.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 
