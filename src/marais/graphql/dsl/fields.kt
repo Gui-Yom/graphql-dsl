@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 
-sealed class Field(val name: String, val description: String?) {
+sealed class FieldSpec(val name: String, val description: String?) {
 
     /**
      * Field arguments as displayed in the schema, no special types
@@ -20,33 +20,33 @@ sealed class Field(val name: String, val description: String?) {
     abstract val outputType: KType
 }
 
-class CustomField(
+class CustomFieldSpec(
     name: String,
     description: String?,
     override val outputType: KType,
     override val arguments: List<Argument> = emptyList(),
     override val dataFetcher: DataFetcher<Any?>
-) : Field(name, description)
+) : FieldSpec(name, description)
 
-internal class PropertyField<R>(
+internal class PropertyFieldSpec<R>(
     property: KProperty1<R, Any?>,
     name: String,
     description: String?,
     instance: R? = null
-) : Field(name, description ?: property.extractDesc()) {
+) : FieldSpec(name, description ?: property.extractDesc()) {
 
     override val dataFetcher: DataFetcher<Any?> = propertyFetcher(property, instance)
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
 }
 
-internal class FunctionField<R>(
+internal class FunctionFieldSpec<R>(
     func: KFunction<Any?>,
     name: String,
     description: String?,
     instance: R?,
     context: SchemaBuilderContext
-) : Field(name, description ?: func.extractDesc()) {
+) : FieldSpec(name, description ?: func.extractDesc()) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()

@@ -18,9 +18,9 @@ dependencies {
     implementation(kotlin("test-junit5", kotlinVersion))
 
     // GraphQL
-    implementation("com.graphql-java:graphql-java:$gqlVersion")
+    api("com.graphql-java:graphql-java:$gqlVersion")
     // GraphQL DSL
-    implementation(project(":"))
+    api(project(":"))
 }
 
 sourceSets {

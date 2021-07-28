@@ -3,7 +3,7 @@ package marais.graphql.dsl.test
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
-import marais.graphql.dsl.SchemaBuilder
+import marais.graphql.dsl.GraphQLSchema
 import marais.graphql.dsl.SchemaSpec
 import marais.graphql.dsl.print
 import kotlin.test.assertEquals
@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  * @param block the code to run with the [SchemaTestContext] as receiver
  */
 fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() -> Unit) {
-    val schema = SchemaBuilder(schemaSpec).build()
+    val schema = GraphQLSchema(schemaSpec)
     println(schema.print(includeDirectives = false))
     block(SchemaTestContext(GraphQL.newGraphQL(schema).build(), schema))
 }
@@ -27,7 +27,7 @@ fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() ->
  */
 fun assertSchemaFails(schemaSpec: SchemaSpec.() -> Unit) {
     assertFails {
-        SchemaBuilder(schemaSpec).build()
+        GraphQLSchema(schemaSpec)
     }
 }
 

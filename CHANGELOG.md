@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Support descriptions on derived fields, and any other primitive, with @GraphQLDescription annotations. The dsl
   description always has priority.
+- `GraphQLSchema()` builder function, equivalent to `SchemaBuilder().build()`
 
 ## [0.6.0]
 

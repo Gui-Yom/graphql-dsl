@@ -15,24 +15,24 @@ annotation class SchemaDsl
  * Holds the root DSL.
  */
 @SchemaDsl
-class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
+class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
 
     override val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
-    val scalars = mutableListOf<ScalarBuilder>()
-    val enums = mutableListOf<EnumBuilder>()
+    val scalars = mutableListOf<ScalarSpec>()
+    val enums = mutableListOf<EnumSpec>()
 
     // Maps a kotlin type to a graphql input type declaration
-    override val inputs = mutableListOf<InputBuilder>()
+    override val inputs = mutableListOf<InputSpec>()
 
     // Maps a kotlin type to a graphql interface declaration
-    val interfaces = mutableListOf<InterfaceBuilder<*>>()
+    val interfaces = mutableListOf<InterfaceSpec<*>>()
 
     // Maps a kotlin type to a graphql type declaration
-    val types = mutableListOf<TypeBuilder<*>>()
+    val types = mutableListOf<TypeSpec<*>>()
 
-    lateinit var query: OperationBuilder<*>
-    var mutation: OperationBuilder<*>? = null
-    var subscription: OperationBuilder<*>? = null
+    lateinit var query: OperationSpec<*>
+    var mutation: OperationSpec<*>? = null
+    var subscription: OperationSpec<*>? = null
 
     // For the DescriptionPublisher implementation
     override var nextDesc: String? = null
@@ -50,7 +50,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        scalars += ScalarBuilder(T::class, name, coercing, takeDesc(), builder)
+        scalars += ScalarSpec(T::class, name, coercing, takeDesc(), builder)
     }
 
     /**
@@ -79,7 +79,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
-        enums += EnumBuilder(T::class, name, takeDesc(), builder)
+        enums += EnumSpec(T::class, name, takeDesc(), builder)
     }
 
     /**
@@ -94,7 +94,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
-        inputs += InputBuilder(T::class, name, takeDesc(), builder)
+        inputs += InputSpec(T::class, name, takeDesc(), builder)
     }
 
     /**
@@ -107,9 +107,9 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
     @SchemaDsl
     inline fun <reified T : Any> inter(
         name: String = T::class.deriveName(),
-        configure: InterfaceBuilder<T>.() -> Unit = { derive() }
+        configure: InterfaceSpec<T>.() -> Unit = { derive() }
     ) {
-        interfaces += InterfaceBuilder(T::class, name, takeDesc(), this).apply(configure)
+        interfaces += InterfaceSpec(T::class, name, takeDesc(), this).apply(configure)
     }
 
     /**
@@ -121,9 +121,9 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
     @SchemaDsl
     inline fun <reified T : Any> type(
         name: String = T::class.deriveName(),
-        configure: TypeBuilder<T>.() -> Unit = { derive() }
+        configure: TypeSpec<T>.() -> Unit = { derive() }
     ) {
-        types += TypeBuilder(T::class, name, takeDesc(), this).apply(configure)
+        types += TypeSpec(T::class, name, takeDesc(), this).apply(configure)
     }
 
     /**
@@ -132,9 +132,9 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object. Defaults to including all fields.
      */
     @SchemaDsl
-    inline fun <T : Any> query(query: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+    inline fun <T : Any> query(query: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.query = OperationBuilder("Query", query, this).apply(configure)
+        this.query = OperationSpec("Query", query, this).apply(configure)
     }
 
     /**
@@ -143,7 +143,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object.
      */
     @SchemaDsl
-    inline fun query(configure: OperationBuilder<Any>.() -> Unit) {
+    inline fun query(configure: OperationSpec<Any>.() -> Unit) {
         query(object {}, configure)
     }
 
@@ -153,9 +153,9 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object. Defaults to including all fields.
      */
     @SchemaDsl
-    inline fun <T : Any> mutation(mutation: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+    inline fun <T : Any> mutation(mutation: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.mutation = OperationBuilder("Mutation", mutation, this).apply(configure)
+        this.mutation = OperationSpec("Mutation", mutation, this).apply(configure)
     }
 
     /**
@@ -164,7 +164,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object.
      */
     @SchemaDsl
-    inline fun mutation(configure: OperationBuilder<Any>.() -> Unit) {
+    inline fun mutation(configure: OperationSpec<Any>.() -> Unit) {
         mutation(object {}, configure)
     }
 
@@ -174,9 +174,9 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object. Defaults to including all fields.
      */
     @SchemaDsl
-    inline fun <T : Any> subscription(subscription: T, configure: OperationBuilder<T>.() -> Unit = { derive() }) {
+    inline fun <T : Any> subscription(subscription: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.subscription = OperationBuilder("Subscription", subscription, this).apply(configure)
+        this.subscription = OperationSpec("Subscription", subscription, this).apply(configure)
     }
 
     /**
@@ -185,7 +185,7 @@ class SchemaSpec(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
      * @param configure the DSL to construct this root object.
      */
     @SchemaDsl
-    inline fun subscription(configure: OperationBuilder<Any>.() -> Unit) {
+    inline fun subscription(configure: OperationSpec<Any>.() -> Unit) {
         subscription(object {}, configure)
     }
 }

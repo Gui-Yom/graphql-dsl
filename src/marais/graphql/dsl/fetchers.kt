@@ -17,7 +17,8 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.callSuspend
 
 
-// TODO Since we know types at compile time, mapping could be done statically instead of inside the DataFetcher
+// TODO Since we know types at compile time, mapping could be done statically (once) instead of inside the DataFetcher
+// just like with field arguments
 
 fun transformMap(value: Any?): Any? {
     return when (value) {

@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 
-operator fun List<Field>.contains(name: String): Boolean {
+operator fun List<FieldSpec>.contains(name: String): Boolean {
     for (field in this) {
         if (field.name == name)
             return true

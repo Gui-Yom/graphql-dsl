@@ -14,7 +14,7 @@ typealias IdCoercer<T> = (value: String?) -> T?
 abstract class SchemaBuilderContext(internal val log: Logger) {
 
     abstract val idCoercers: Map<KClass<*>, IdCoercer<*>>
-    abstract val inputs: List<InputBuilder>
+    abstract val inputs: List<InputSpec>
 
     internal fun getInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass }
 

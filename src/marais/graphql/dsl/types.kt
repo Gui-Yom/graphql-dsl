@@ -10,8 +10,11 @@ import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
+/**
+ * Base builder for every object type
+ */
 @SchemaDsl
-sealed class BaseTypeBuilder<R : Any>(
+sealed class BaseTypeSpec<R : Any>(
     val kclass: KClass<R>,
     private val instance: R?,
     val name: String,
@@ -19,7 +22,7 @@ sealed class BaseTypeBuilder<R : Any>(
     private val context: SchemaBuilderContext
 ) : DescriptionHolder {
     val description: String? = description ?: kclass.extractDesc()
-    val fields: MutableList<Field> = mutableListOf()
+    val fields: MutableList<FieldSpec> = mutableListOf()
 
     // For the DescriptionHolder implementation
     override var nextDesc: String? = null
@@ -33,7 +36,7 @@ sealed class BaseTypeBuilder<R : Any>(
      */
     @SchemaDsl
     inline fun <reified T : Any> static(name: String, value: T) {
-        fields += CustomField(name, takeDesc(), typeOf<T>(), emptyList(), StaticDataFetcher(value))
+        fields += CustomFieldSpec(name, takeDesc(), typeOf<T>(), emptyList(), StaticDataFetcher(value))
     }
 
     /**
@@ -50,7 +53,7 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += PropertyField(property, name, takeDesc())
+        fields += PropertyFieldSpec(property, name, takeDesc())
     }
 
     /**
@@ -74,7 +77,7 @@ sealed class BaseTypeBuilder<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += FunctionField<R>(func, name, takeDesc(), null, context)
+        fields += FunctionFieldSpec<R>(func, name, takeDesc(), null, context)
     }
 
     /**
@@ -104,7 +107,7 @@ sealed class BaseTypeBuilder<R : Any>(
             it !in propFilter
         }.forEach {
             context.log.debug("[derive] ${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
-            fields += PropertyField(it, it.name, null, instance)
+            fields += PropertyFieldSpec(it, it.name, null, instance)
         }
     }
 
@@ -118,7 +121,7 @@ sealed class BaseTypeBuilder<R : Any>(
             it !in funFilter
         }.forEach {
             context.log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionField(it, it.name, null, instance, context)
+            fields += FunctionFieldSpec(it, it.name, null, instance, context)
         }
     }
 
@@ -170,7 +173,7 @@ sealed class BaseTypeBuilder<R : Any>(
         fetcher: suspend R.() -> O
     ) {
         val reflected = fetcher.reflect()!!
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -210,7 +213,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val reflected = fetcher.reflect()!!
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -249,7 +252,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val params = reflected.valueParameters
         val arg0 = params[0].createArgument(context)
         val arg1 = params[1].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -290,7 +293,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val arg0 = params[0].createArgument(context)
         val arg1 = params[1].createArgument(context)
         val arg2 = params[2].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -333,7 +336,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val arg1 = params[1].createArgument(context)
         val arg2 = params[2].createArgument(context)
         val arg3 = params[3].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -378,7 +381,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val arg2 = params[2].createArgument(context)
         val arg3 = params[3].createArgument(context)
         val arg4 = params[4].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -425,7 +428,7 @@ sealed class BaseTypeBuilder<R : Any>(
         val arg3 = params[3].createArgument(context)
         val arg4 = params[4].createArgument(context)
         val arg5 = params[5].createArgument(context)
-        fields += CustomField(
+        fields += CustomFieldSpec(
             name,
             takeDesc(),
             reflected.returnType.unwrapAsyncType(),
@@ -457,12 +460,12 @@ sealed class BaseTypeBuilder<R : Any>(
 /**
  * DSL for building a GraphQL interface.
  */
-class InterfaceBuilder<R : Any>(
+class InterfaceSpec<R : Any>(
     kclass: KClass<R>,
     name: String,
     description: String?,
     context: SchemaBuilderContext
-) : BaseTypeBuilder<R>(kclass, null, name, description, context) {
+) : BaseTypeSpec<R>(kclass, null, name, description, context) {
 
     init {
         require(kclass.isValidClassForInterface())
@@ -472,12 +475,12 @@ class InterfaceBuilder<R : Any>(
 /**
  * DSL for building a GraphQL Object type.
  */
-class TypeBuilder<R : Any>(
+class TypeSpec<R : Any>(
     kclass: KClass<R>,
     name: String,
     description: String?,
     context: SchemaBuilderContext
-) : BaseTypeBuilder<R>(kclass, null, name, description, context) {
+) : BaseTypeSpec<R>(kclass, null, name, description, context) {
 
     init {
         require(kclass.isValidClassForType())
@@ -504,8 +507,8 @@ class TypeBuilder<R : Any>(
 /**
  * DSL for building a root object.
  */
-class OperationBuilder<R : Any>(name: String, instance: R, context: SchemaBuilderContext) :
-    BaseTypeBuilder<R>(instance::class as KClass<R>, instance, name, null, context) {
+class OperationSpec<R : Any>(name: String, instance: R, context: SchemaBuilderContext) :
+    BaseTypeSpec<R>(instance::class as KClass<R>, instance, name, null, context) {
 
     init {
         require(kclass.isValidClassForType())

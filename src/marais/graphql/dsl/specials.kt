@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.primaryConstructor
 
-class ScalarBuilder(
+class ScalarSpec(
     val kclass: KClass<*>,
     val name: String,
     val coercing: Coercing<*, *>,
@@ -18,7 +18,7 @@ class ScalarBuilder(
     val description: String? = description ?: kclass.extractDesc()
 }
 
-class EnumBuilder(
+class EnumSpec(
     val kclass: KClass<*>,
     val name: String,
     description: String?,
@@ -27,7 +27,7 @@ class EnumBuilder(
     val description: String? = description ?: kclass.extractDesc()
 }
 
-class InputBuilder(
+class InputSpec(
     val kclass: KClass<*>,
     val name: String,
     description: String?,

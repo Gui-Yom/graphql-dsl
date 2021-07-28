@@ -34,7 +34,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
 
     // GraphQL
-    implementation("com.graphql-java:graphql-java:$gqlVersion")
+    api("com.graphql-java:graphql-java:$gqlVersion")
 
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
