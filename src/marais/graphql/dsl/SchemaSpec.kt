@@ -15,14 +15,14 @@ annotation class SchemaDsl
  * Holds the root DSL.
  */
 @SchemaDsl
-class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), DescriptionHolder {
+class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
 
-    override val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
+    val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarSpec>()
     val enums = mutableListOf<EnumSpec>()
 
     // Maps a kotlin type to a graphql input type declaration
-    override val inputs = mutableListOf<InputSpec>()
+    val inputs = mutableListOf<InputSpec>()
 
     // Maps a kotlin type to a graphql interface declaration
     val interfaces = mutableListOf<InterfaceSpec<*>>()
@@ -36,6 +36,8 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
 
     // For the DescriptionPublisher implementation
     override var nextDesc: String? = null
+
+    val context = SchemaBuilderContext(log, idCoercers, inputs, interfaces)
 
     /**
      * Define [T] as being a GraphQL scalar.
@@ -109,7 +111,7 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
         name: String = T::class.deriveName(),
         configure: InterfaceSpec<T>.() -> Unit = { derive() }
     ) {
-        interfaces += InterfaceSpec(T::class, name, takeDesc(), this).apply(configure)
+        interfaces += InterfaceSpec(T::class, name, takeDesc(), context).apply(configure)
     }
 
     /**
@@ -121,9 +123,9 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
     @SchemaDsl
     inline fun <reified T : Any> type(
         name: String = T::class.deriveName(),
-        configure: TypeSpec<T>.() -> Unit = { derive() }
+        configure: TypeSpec<T>.() -> Unit = { derive(); deriveInterfaces() }
     ) {
-        types += TypeSpec(T::class, name, takeDesc(), this).apply(configure)
+        types += TypeSpec(T::class, name, takeDesc(), context).apply(configure)
     }
 
     /**
@@ -134,7 +136,7 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
     @SchemaDsl
     inline fun <T : Any> query(query: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.query = OperationSpec("Query", query, this).apply(configure)
+        this.query = OperationSpec("Query", query, context).apply(configure)
     }
 
     /**
@@ -155,7 +157,7 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
     @SchemaDsl
     inline fun <T : Any> mutation(mutation: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.mutation = OperationSpec("Mutation", mutation, this).apply(configure)
+        this.mutation = OperationSpec("Mutation", mutation, context).apply(configure)
     }
 
     /**
@@ -176,7 +178,7 @@ class SchemaSpec internal constructor(log: Logger) : SchemaBuilderContext(log), 
     @SchemaDsl
     inline fun <T : Any> subscription(subscription: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
         takeDesc() // Consume description
-        this.subscription = OperationSpec("Subscription", subscription, this).apply(configure)
+        this.subscription = OperationSpec("Subscription", subscription, context).apply(configure)
     }
 
     /**

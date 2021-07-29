@@ -19,7 +19,7 @@ sealed class BaseTypeSpec<R : Any>(
     private val instance: R?,
     val name: String,
     description: String?,
-    private val context: SchemaBuilderContext
+    protected val context: SchemaBuilderContext
 ) : DescriptionHolder {
     val description: String? = description ?: kclass.extractDesc()
     val fields: MutableList<FieldSpec> = mutableListOf()
@@ -501,6 +501,14 @@ class TypeSpec<R : Any>(
         // TODO check that R : I
         interfaces += I::class
         // TODO include interface fields
+    }
+
+    /**
+     * Automatically implement known interfaces.
+     */
+    @SchemaDsl
+    fun deriveInterfaces() {
+        interfaces += context.getImplementedInterfaces(kclass)
     }
 }
 

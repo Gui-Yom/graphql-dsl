@@ -13,6 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   description always has priority.
 - `GraphQLSchema()` builder function, equivalent to `SchemaBuilder().build()`
 - Migrate from logback to log4j2
+- Automatically derive interfaces on object types if the interface is declared before
 
 ## [0.6.0]
 
