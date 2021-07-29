@@ -8,4 +8,4 @@ pluginManagement {
 
 rootProject.name = "graphql-dsl"
 
-include(":graphql-dsl-test")
+include(":graphql-dsl-test", ":examples:starwars")

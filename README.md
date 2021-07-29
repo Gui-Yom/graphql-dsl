@@ -104,6 +104,8 @@ val schema = SchemaBuilder {
 println(schema.print())
 ```
 
+An example project showcasing the GraphQL introduction' Star Wars schema is available under `examples/starwars`.
+
 ## Features
 
 - All operations (query, mutation, subscription)
