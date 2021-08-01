@@ -9,40 +9,11 @@ import kotlinx.coroutines.future.future
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KFunction
-import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.callSuspend
 
-
-fun KProperty1<*, *>.fetcher(returnType: KType): DataFetcher<Any> {
-    return when (returnType.classifier) {
-        Map::class -> {
-            val getter = this.getter as KFunction<Map<String, Any>>
-            DataFetcher { env ->
-                getter.call(env.getSource()).entries
-            }
-        }
-        Deferred::class -> {
-            if (returnType.unwrap().classifier == Map::class) {
-                val getter = this.getter as KFunction<Deferred<Map<Any, Any>>>
-                DataFetcher { env ->
-                    getter.call(env.getSource()).asCompletableFuture().thenApply(Map<*, *>::entries)
-                }
-            } else {
-                val getter = this.getter as KFunction<Deferred<Any>>
-                DataFetcher { env ->
-                    getter.call(env.getSource()).asCompletableFuture()
-                }
-            }
-        }
-        else -> {
-            val getter = this.getter
-            DataFetcher { env -> getter.call(env.getSource()) }
-        }
-    }
-}
-
-fun List<Argument>.resolve(env: DataFetchingEnvironment): List<Any?> = map { it.resolve(env) }
+fun List<Argument>.resolve(env: DataFetchingEnvironment): List<Any?> =
+    if (isEmpty()) this else map { it.resolve(env) }
 
 // We don't extract the function return type directly from the kfunction instance since they may be indirect calls
 // We let the caller make the appropriate reflection calls
@@ -57,7 +28,6 @@ fun KFunction<*>.fetcher(
         Map::class -> {
             DataFetcher { env ->
                 val args = args.resolve(env)
-
                 scope.future(context) {
                     (this@fetcher as KFunction<Map<String, Any>>).callSuspend(
                         env.getSource(),

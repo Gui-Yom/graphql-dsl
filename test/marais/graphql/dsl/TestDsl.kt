@@ -88,12 +88,12 @@ class TestDsl {
 
     @Test
     fun testSimpleMap() = withSchema({
-        query(object {
-            val prop = mapOf("key" to "value")
-        })
+        query {
+            "test" { -> mapOf("key" to "value") }
+        }
     }) {
-        """query { prop { key, value } }""" shouldReturns mapOf(
-            "prop" to listOf(
+        """query { test { key, value } }""" shouldReturns mapOf(
+            "test" to listOf(
                 mapOf(
                     "key" to "key",
                     "value" to "value"

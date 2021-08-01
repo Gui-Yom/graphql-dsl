@@ -58,7 +58,7 @@ internal class PropertyFieldSpec<R>(
     instance: R? = null
 ) : FieldSpec(name, description ?: property.extractDesc()) {
 
-    override val dataFetcher: DataFetcher<Any> = property.fetcher(property.returnType)
+    override val dataFetcher: DataFetcher<Any> = property.getter.fetcher(property.returnType, emptyList())
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
 }
