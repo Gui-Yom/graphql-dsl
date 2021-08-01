@@ -104,7 +104,7 @@ sealed class BaseTypeSpec<R : Any>(
         }.filter {
             it !in propFilter
         }.forEach {
-            context.log.debug("[derive] ${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
+            context.logDerive.debug("${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
             fields += PropertyFieldSpec(it, it.name, null, instance)
         }
     }
@@ -118,7 +118,7 @@ sealed class BaseTypeSpec<R : Any>(
         }.filter {
             it !in funFilter
         }.forEach {
-            context.log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
+            context.logDerive.debug("${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
             fields += FunctionFieldSpec(it, it.name, null, null, context)
         }
     }

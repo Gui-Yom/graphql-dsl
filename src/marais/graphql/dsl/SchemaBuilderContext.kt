@@ -1,5 +1,6 @@
 package marais.graphql.dsl
 
+import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
@@ -18,6 +19,8 @@ class SchemaBuilderContext(
     val inputs: List<InputSpec>,
     val interfaces: List<InterfaceSpec<*>>
 ) {
+
+    internal val logDerive = LogManager.getLogger("${log.name}.derive")
 
     internal fun getInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass }
 
