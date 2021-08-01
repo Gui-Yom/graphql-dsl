@@ -167,9 +167,10 @@ class SchemaBuilder(configure: SchemaSpec.() -> Unit) {
 
     private fun resolveInOutType(kclass: KClass<*>): GraphQLType? {
         return scalars[kclass] ?: when (kclass) {
-            Int::class -> Scalars.GraphQLInt
-            Short::class -> Scalars.GraphQLInt // default
             Byte::class -> Scalars.GraphQLInt // default
+            Short::class -> Scalars.GraphQLInt // default
+            Int::class -> Scalars.GraphQLInt
+            Long::class -> Scalars.GraphQLInt // default
             Float::class -> Scalars.GraphQLFloat
             Double::class -> Scalars.GraphQLFloat // default
             String::class -> Scalars.GraphQLString
