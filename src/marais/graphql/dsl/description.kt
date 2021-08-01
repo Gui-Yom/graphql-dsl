@@ -30,4 +30,4 @@ annotation class GraphQLDescription(val desc: String)
 /**
  * Extract the graphql description string from the [GraphQLDescription] annotation if present or null
  */
-fun KAnnotatedElement.extractDesc(): String? = findAnnotation<GraphQLDescription>()?.desc
+fun KAnnotatedElement.extractDesc(): String? = findAnnotation<GraphQLDescription>()?.desc?.trimIndent()
