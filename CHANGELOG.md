@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0]
+
 ### Added
 
 - Support descriptions on derived fields, and any other primitive, with @GraphQLDescription annotations. The dsl
@@ -14,6 +16,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `GraphQLSchema()` builder function, equivalent to `SchemaBuilder().build()`
 - Migrate from logback to log4j2
 - Automatically derive interfaces on object types if the interface is declared before
+
+### Fixed
+
+- The function receiver wasn't passed to the fetcher under some conditions
 
 ## [0.6.0]
 
@@ -69,7 +75,9 @@ query {
 
 ## [0.3.2] - 2021-07-11
 
-[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.7.0...HEAD
+
+[0.7.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.6.0...v0.7.0
 
 [0.6.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.5.0...v0.6.0
 
