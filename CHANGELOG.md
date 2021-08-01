@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.1]
+
+### Fixed
+
+- Support Flow for subscriptions back again
+- Map kotlin.Long to GraphQLInt by default
+
 ## [0.7.0]
 
 ### Added
