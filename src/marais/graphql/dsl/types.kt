@@ -14,7 +14,8 @@ import kotlin.reflect.typeOf
 @SchemaDsl
 sealed class BaseTypeSpec<R : Any>(
     val kclass: KClass<R>,
-    private val instance: R?,
+    @PublishedApi
+    internal val instance: R?,
     val name: String,
     description: String?,
     protected val context: SchemaBuilderContext
@@ -51,7 +52,7 @@ sealed class BaseTypeSpec<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += PropertyFieldSpec(property, name, takeDesc())
+        fields += PropertyFieldSpec(property, name, takeDesc(), instance)
     }
 
     /**
@@ -75,7 +76,7 @@ sealed class BaseTypeSpec<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += FunctionFieldSpec<R>(func, name, takeDesc(), null, context)
+        fields += FunctionFieldSpec(func, name, takeDesc(), instance, context)
     }
 
     /**
@@ -119,7 +120,7 @@ sealed class BaseTypeSpec<R : Any>(
             it !in funFilter
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionFieldSpec(it, it.name, null, null, context)
+            fields += FunctionFieldSpec(it, it.name, null, instance, context)
         }
     }
 
@@ -183,7 +184,7 @@ sealed class BaseTypeSpec<R : Any>(
             returnType.unwrapAsyncType(),
             // I do not pass the StaticArgument here since it's not shown in the schema anyway
             emptyList(),
-            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)))
+            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)), instance)
         )
     }
 
@@ -208,7 +209,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 1, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 1, context, instance)
     }
 
     /**
@@ -232,7 +233,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 2, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 2, context, instance)
     }
 
     /**
@@ -256,7 +257,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 3, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 3, context, instance)
     }
 
     /**
@@ -280,7 +281,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 4, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 4, context, instance)
     }
 
     /**
@@ -304,7 +305,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D, E) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 5, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 5, context, instance)
     }
 
     /**
@@ -328,7 +329,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D, E, F) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 6, context)
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 6, context, instance)
     }
 
     /**

@@ -18,6 +18,10 @@ sealed class FieldSpec(val name: String, val description: String?) {
      * The code behind this field returning a value
      */
     abstract val dataFetcher: DataFetcher<Any>
+
+    /**
+     * The output type as shown in the schema (e.g. no async containers)
+     */
     abstract val outputType: KType
 }
 
@@ -35,6 +39,7 @@ internal class SuspendLambdaFieldSpec(
     lambda: Function<*>,
     arity: Int,
     context: SchemaBuilderContext,
+    receiver: Any? = null,
     reflected: KFunction<*> = lambda.reflect()!!
 ) : FieldSpec(name, description) {
 
@@ -48,17 +53,17 @@ internal class SuspendLambdaFieldSpec(
     }
 
     override val dataFetcher: DataFetcher<Any> =
-        Lambdas.indirectCallSuspend(arity).fetcher(reflected.returnType, arguments)
+        Lambdas.indirectCallSuspend(arity).fetcher(reflected.returnType, arguments, receiver)
 }
 
 internal class PropertyFieldSpec<R>(
     property: KProperty1<R, Any?>,
     name: String,
     description: String?,
-    instance: R? = null
+    receiver: R? = null
 ) : FieldSpec(name, description ?: property.extractDesc()) {
 
-    override val dataFetcher: DataFetcher<Any> = property.getter.fetcher(property.returnType, emptyList())
+    override val dataFetcher: DataFetcher<Any> = property.getter.fetcher(property.returnType, emptyList(), receiver)
     override val outputType: KType = property.returnType.unwrapAsyncType()
     override val arguments: List<Argument> = emptyList()
 }
@@ -67,7 +72,7 @@ internal class FunctionFieldSpec<R>(
     func: KFunction<Any?>,
     name: String,
     description: String?,
-    instance: R?,
+    receiver: R?,
     context: SchemaBuilderContext
 ) : FieldSpec(name, description ?: func.extractDesc()) {
 
@@ -80,5 +85,5 @@ internal class FunctionFieldSpec<R>(
         }
     }
 
-    override val dataFetcher: DataFetcher<Any> = func.fetcher(func.returnType, arguments)
+    override val dataFetcher: DataFetcher<Any> = func.fetcher(func.returnType, arguments, receiver)
 }

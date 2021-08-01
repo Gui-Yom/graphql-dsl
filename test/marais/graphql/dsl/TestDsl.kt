@@ -101,4 +101,63 @@ class TestDsl {
             )
         )
     }
+
+    @Test
+    fun `requires receiver derive`() = withSchema({
+        // We need an instance of the anonymous object to access 'test'
+        query(object {
+            val test = 42
+        })
+    }) {
+        """query { test }""" shouldReturns mapOf("test" to 42)
+    }
+
+    @Test
+    fun `requires receiver include`() = withSchema({
+        // We need an instance of the anonymous object to access 'test'
+
+        class Query {
+            val test = 42
+        }
+
+        query(Query()) {
+            +Query::test
+        }
+    }) {
+        """query { test }""" shouldReturns mapOf("test" to 42)
+    }
+
+    @Test
+    fun `requires receiver additional field0`() = withSchema({
+        // We need an instance of the anonymous object to access 'test'
+
+        class Query {
+            val test = 42
+        }
+
+        query(Query()) {
+            derive()
+
+            "test2" { -> test + 1 }
+        }
+    }) {
+        """query { test, test2 }""" shouldReturns mapOf("test" to 42, "test2" to 43)
+    }
+
+    @Test
+    fun `requires receiver additional field1`() = withSchema({
+        // We need an instance of the anonymous object to access 'test'
+
+        class Query {
+            val test = 42
+        }
+
+        query(Query()) {
+            derive()
+
+            "test2" { arg: Int -> test + arg }
+        }
+    }) {
+        """query { test, test2(arg: 1) }""" shouldReturns mapOf("test" to 42, "test2" to 43)
+    }
 }
