@@ -69,7 +69,7 @@ internal fun KType.unwrap(): KType {
     }
 }
 
-internal fun KType.unwrapAsyncType(): KType = if (isAsyncType()) unwrap() else this
+fun KType.unwrapAsyncType(): KType = if (isAsyncType()) unwrap() else this
 
 internal val KType.name
     get() = kclass.simpleName!!

@@ -6,8 +6,6 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.valueParameters
-import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
 /**
@@ -121,7 +119,7 @@ sealed class BaseTypeSpec<R : Any>(
             it !in funFilter
         }.forEach {
             context.log.debug("[derive] ${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionFieldSpec(it, it.name, null, instance, context)
+            fields += FunctionFieldSpec(it, it.name, null, null, context)
         }
     }
 
@@ -158,8 +156,14 @@ sealed class BaseTypeSpec<R : Any>(
         deriveFunctions(exclusions.nameExclusions, exclusions.funExclusions)
     }
 
-    //We can't call raw Function<*> because of how kotlin-reflect warks atm, so we have to specify each possibility.
-    // TODO explore the possibility of making these functions inline to remove the call to resolver.reflect()
+    // We can't call raw Function<*> because of how kotlin-reflect works atm, so we have to specify each possibility.
+    // We pass a reference to a method that call our lambda for us, so we get a standard KFunction for our fetcher
+    // We then pass the lambda as a hidden argument to our field
+    // Tbh, I kinda feel like a genius for coming up with this
+
+    // For that first field() impl, the lambda don't have any parameters, so we can use an inline function
+    // This special impl is kept for demonstration, we could have used the general impl
+    // Sadly, we still need to call .reflect() on other lambdas to obtain the parameter names
 
     /**
      * Declare a custom field.
@@ -168,21 +172,19 @@ sealed class BaseTypeSpec<R : Any>(
      * @param fetcher the code executed behind this field
      */
     @SchemaDsl
-    fun <O> field(
+    inline fun <reified O> field(
         name: String,
-        fetcher: suspend R.() -> O
+        noinline fetcher: suspend R.() -> O
     ) {
-        val reflected = fetcher.reflect()!!
+        val returnType = typeOf<O>()
         fields += CustomFieldSpec(
             name,
             takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
+            returnType.unwrapAsyncType(),
+            // I do not pass the StaticArgument here since it's not shown in the schema anyway
             emptyList(),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource()
-                )
-            })
+            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)))
+        )
     }
 
     /**
@@ -191,12 +193,9 @@ sealed class BaseTypeSpec<R : Any>(
      * @param fetcher the code executed behind this field
      */
     @SchemaDsl
-    operator fun <O> String.invoke(fetcher: suspend R.() -> O) {
+    inline operator fun <reified O> String.invoke(noinline fetcher: suspend R.() -> O) {
         field(this, fetcher)
     }
-
-    // TODO Maybe inlining could be better to obtain the type of A
-    // We need to reflect the lambda anyway to get param names
 
     /**
      * Declare a custom field.
@@ -204,26 +203,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A> field(
         name: String,
         fetcher: suspend R.(A) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 1, context)
     }
 
     /**
@@ -242,28 +227,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B> field(
         name: String,
         fetcher: suspend R.(A, B) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        val arg1 = params[1].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0, arg1),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A,
-                    arg1.resolve(it) as B
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 2, context)
     }
 
     /**
@@ -282,30 +251,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C> field(
         name: String,
         fetcher: suspend R.(A, B, C) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        val arg1 = params[1].createArgument(context)
-        val arg2 = params[2].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0, arg1, arg2),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A,
-                    arg1.resolve(it) as B,
-                    arg2.resolve(it) as C
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 3, context)
     }
 
     /**
@@ -324,32 +275,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D> field(
         name: String,
         fetcher: suspend R.(A, B, C, D) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        val arg1 = params[1].createArgument(context)
-        val arg2 = params[2].createArgument(context)
-        val arg3 = params[3].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0, arg1, arg2, arg3),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A,
-                    arg1.resolve(it) as B,
-                    arg2.resolve(it) as C,
-                    arg3.resolve(it) as D
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 4, context)
     }
 
     /**
@@ -368,34 +299,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E> field(
         name: String,
         fetcher: suspend R.(A, B, C, D, E) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        val arg1 = params[1].createArgument(context)
-        val arg2 = params[2].createArgument(context)
-        val arg3 = params[3].createArgument(context)
-        val arg4 = params[4].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0, arg1, arg2, arg3, arg4),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A,
-                    arg1.resolve(it) as B,
-                    arg2.resolve(it) as C,
-                    arg3.resolve(it) as D,
-                    arg4.resolve(it) as E
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 5, context)
     }
 
     /**
@@ -414,36 +323,12 @@ sealed class BaseTypeSpec<R : Any>(
      * @param name the name of the field
      * @param fetcher the code executed behind this field
      */
-    @Suppress("UNCHECKED_CAST")
     @SchemaDsl
     fun <O, A, B, C, D, E, F> field(
         name: String,
         fetcher: suspend R.(A, B, C, D, E, F) -> O
     ) {
-        val reflected = fetcher.reflect()!!
-        val params = reflected.valueParameters
-        val arg0 = params[0].createArgument(context)
-        val arg1 = params[1].createArgument(context)
-        val arg2 = params[2].createArgument(context)
-        val arg3 = params[3].createArgument(context)
-        val arg4 = params[4].createArgument(context)
-        val arg5 = params[5].createArgument(context)
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            reflected.returnType.unwrapAsyncType(),
-            listOf(arg0, arg1, arg2, arg3, arg4, arg5),
-            suspendFetcher {
-                fetcher(
-                    instance ?: it.getSource(),
-                    arg0.resolve(it) as A,
-                    arg1.resolve(it) as B,
-                    arg2.resolve(it) as C,
-                    arg3.resolve(it) as D,
-                    arg4.resolve(it) as E,
-                    arg5.resolve(it) as F
-                )
-            })
+        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 6, context)
     }
 
     /**

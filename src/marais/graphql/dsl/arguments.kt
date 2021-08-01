@@ -30,7 +30,7 @@ internal fun createArgument(name: String, type: KType, desc: String?, context: S
 sealed class Argument(val name: String, val type: KType, val description: String?) {
 
     internal val isShownInSchema: Boolean
-        get() = this !is EnvArgument
+        get() = this !is EnvArgument && this !is StaticArgument
 
     /**
      * Resolve this argument directly from the environment.
@@ -54,6 +54,16 @@ private class IdArgument(name: String, type: KType, desc: String?, private val i
 
     override fun resolve(input: Any?): Any? {
         return idCoercer.invoke(input as? String?)
+    }
+}
+
+class StaticArgument(private val value: Any?) : Argument("static", typeOf<Any>(), null) {
+    override fun resolve(env: DataFetchingEnvironment): Any? {
+        return value
+    }
+
+    override fun resolve(input: Any?): Any? {
+        return value
     }
 }
 
