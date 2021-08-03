@@ -97,7 +97,7 @@ publishing {
         create<MavenPublication>("graphql-dsl") {
             from(project.components["java"])
             pom {
-                name.set(rootProject.name)
+                name.set("graphql-dsl")
                 description.set("Generate your GraphQL schema with a code-first Kotlin DSL")
                 url.set("https://github.com/Gui-Yom/graphql-dsl")
                 developers {

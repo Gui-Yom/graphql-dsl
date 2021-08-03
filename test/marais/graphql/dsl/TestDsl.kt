@@ -24,21 +24,21 @@ class TestDsl {
 
         withSchema({
             scalar(object : Coercing<Handle, String> {
-                override fun serialize(dataFetcherResult: Any?): String {
+                override fun serialize(dataFetcherResult: Any): String {
                     return when (dataFetcherResult) {
                         is Handle -> dataFetcherResult.inner
                         else -> throw CoercingSerializeException("Must be Handle")
                     }
                 }
 
-                override fun parseValue(input: Any?): Handle {
+                override fun parseValue(input: Any): Handle {
                     return when (input) {
                         is String -> Handle(input)
                         else -> throw CoercingParseValueException("Must be String")
                     }
                 }
 
-                override fun parseLiteral(input: Any?): Handle {
+                override fun parseLiteral(input: Any): Handle {
                     return when (input) {
                         is StringValue -> Handle(input.value)
                         else -> throw CoercingParseLiteralException("Must be String")
