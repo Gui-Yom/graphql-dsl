@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Artifact group is now `marais.graphql`
+
 ## [0.7.1]
 
 ### Fixed

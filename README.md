@@ -7,7 +7,7 @@ See also [graphql-dsl-test](#graphql-dsl-test) for some test utilities.
 ## Example
 
 ```kotlin
-val schema = SchemaBuilder {
+val schema = GraphQLSchema {
 
     // Declare a scalar type given its Coercing implementation
     scalar(UrlCoercing, "Url")
@@ -98,7 +98,7 @@ val schema = SchemaBuilder {
     // is directly equivalent to
     type<Bar> { derive() }
     // Same with every other type builders
-}.build() // Returns a ready to use GraphQLSchema
+} // Returns a ready to use GraphQLSchema
 
 // You can use the GraphQLSchema.print() extension to render your schema to a String
 println(schema.print())
@@ -151,7 +151,7 @@ repositories {
     }
 }
 dependencies {
-    testImplementation("marais:graphql-dsl:0.5.0")
+    implementation("marais.graphql:graphql-dsl:0.8.0")
 }
 ```
 
@@ -200,6 +200,6 @@ repositories {
     }
 }
 dependencies {
-    testImplementation("marais:graphql-dsl-test:0.5.0")
+    testImplementation("marais.graphql:graphql-dsl-test:0.8.0")
 }
 ```
