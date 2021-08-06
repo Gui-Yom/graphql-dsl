@@ -1,7 +1,9 @@
 package marais.graphql.dsl
 
+import graphql.AssertException
 import graphql.language.StringValue
 import graphql.schema.*
+import kotlinx.coroutines.flow.flowOf
 import marais.graphql.dsl.test.withSchema
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -159,5 +161,23 @@ class TestDsl {
         }
     }) {
         """query { test, test2(arg: 1) }""" shouldReturns mapOf("test" to 42, "test2" to 43)
+    }
+
+    @Test
+    fun `do not convert flow to publisher`() = withSchema({
+
+        doNotConvertFlowToPublisher()
+
+        query {
+            "empty" { -> 0 }
+        }
+
+        subscription {
+            "test" { -> flowOf("hello", "world") }
+        }
+    }) {
+        // The default SubscriptionExecutionStrategy does not handle Flow and throws an Exception
+        // This means we didn't convert the Flow to a Publisher
+        assertQueryFailsWith<AssertException>("""subscription { test }""")
     }
 }

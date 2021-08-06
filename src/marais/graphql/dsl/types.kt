@@ -18,7 +18,8 @@ sealed class BaseTypeSpec<R : Any>(
     internal val instance: R?,
     val name: String,
     description: String?,
-    protected val context: SchemaBuilderContext
+    @PublishedApi
+    internal val context: SchemaBuilderContext
 ) : DescriptionHolder {
     val description: String? = description ?: kclass.extractDesc()
     val fields: MutableList<FieldSpec> = mutableListOf()
@@ -52,7 +53,7 @@ sealed class BaseTypeSpec<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += PropertyFieldSpec(property, name, takeDesc(), instance)
+        fields += PropertyFieldSpec(property, name, takeDesc(), instance, context)
     }
 
     /**
@@ -106,7 +107,7 @@ sealed class BaseTypeSpec<R : Any>(
             it !in propFilter
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
-            fields += PropertyFieldSpec(it, it.name, null, instance)
+            fields += PropertyFieldSpec(it, it.name, null, instance, context)
         }
     }
 
@@ -184,7 +185,7 @@ sealed class BaseTypeSpec<R : Any>(
             returnType.unwrapAsyncType(),
             // I do not pass the StaticArgument here since it's not shown in the schema anyway
             emptyList(),
-            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)), instance)
+            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)), instance, context)
         )
     }
 

@@ -8,7 +8,25 @@ import marais.graphql.dsl.SchemaSpec
 import marais.graphql.dsl.print
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+
+/**
+ * Construct a GraphQL engine following the given [SchemaSpec].
+ *
+ * @param schemaSpec the DSL to build the schema
+ * @param builder the graphql engine builder
+ * @param block the code to run with the [SchemaTestContext] as receiver
+ */
+fun withSchema(
+    schemaSpec: SchemaSpec.() -> Unit,
+    builder: GraphQL.Builder.() -> Unit,
+    block: SchemaTestContext.() -> Unit
+) {
+    val schema = GraphQLSchema(schemaSpec)
+    println(schema.print(includeDirectives = false))
+    block(SchemaTestContext(GraphQL.newGraphQL(schema).apply(builder).build(), schema))
+}
 
 /**
  * Construct a GraphQL engine following the given [SchemaSpec].
@@ -16,11 +34,8 @@ import kotlin.test.assertTrue
  * @param schemaSpec the DSL to build the schema
  * @param block the code to run with the [SchemaTestContext] as receiver
  */
-fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() -> Unit) {
-    val schema = GraphQLSchema(schemaSpec)
-    println(schema.print(includeDirectives = false))
-    block(SchemaTestContext(GraphQL.newGraphQL(schema).build(), schema))
-}
+fun withSchema(schemaSpec: SchemaSpec.() -> Unit, block: SchemaTestContext.() -> Unit) =
+    withSchema(schemaSpec, {}, block)
 
 /**
  * Assert the given schema fails.
@@ -48,7 +63,7 @@ class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
      * @param query the GraphQL query to run
      * @param expected the expected result
      */
-    fun assertQueryReturns(query: String, expected: Map<String, Any?>) {
+    fun <T> assertQueryReturns(query: String, expected: T?) {
         withQuery(query) {
             assertTrue(errors.isEmpty(), errors.toString())
             assertEquals(expected, getData())
@@ -60,7 +75,13 @@ class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
      *
      * @param expected the expected result
      */
-    infix fun String.shouldReturns(expected: Map<String, Any?>) {
+    infix fun <T> String.shouldReturns(expected: T?) {
         assertQueryReturns(this, expected)
+    }
+
+    inline fun <reified T : Throwable> assertQueryFailsWith(query: String) {
+        assertFailsWith<T> {
+            graphQL.execute(query)
+        }
     }
 }

@@ -20,6 +20,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Correctly handle the case were a fetcher returns Flow\<Map\>
+- Support CompletableFuture again
 
 ## [0.7.1] - 2021-08-01
 
