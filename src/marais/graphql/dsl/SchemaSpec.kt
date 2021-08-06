@@ -40,6 +40,20 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
     val context = SchemaBuilderContext(log, idCoercers, inputs, interfaces)
 
     /**
+     * By default, when generating fetchers for your fields, [kotlinx.coroutines.flow.Flow] will be converted to
+     * [org.reactivestreams.Publisher] because the default [graphql.execution.SubscriptionExecutionStrategy] only
+     * supports it as subscription return type.
+     *
+     * Apply this directive at the top of your schema (before any subscription declaration) to prevent this behaviour.
+     * This requires you to use an implementation of [graphql.execution.SubscriptionExecutionStrategy] that handle
+     * [kotlinx.coroutines.flow.Flow] correctly.
+     */
+    @SchemaDsl
+    fun doNotConvertFlowToPublisher() {
+        context.convertFlowToPublisher = false
+    }
+
+    /**
      * Define [T] as being a GraphQL scalar.
      *
      * @param coercing the [Coercing] implementation for this scalar

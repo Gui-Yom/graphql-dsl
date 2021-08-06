@@ -5,6 +5,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.reactive.asPublisher
@@ -24,13 +25,14 @@ fun KFunction<*>.fetcher(
     returnType: KType,
     args: List<Argument>,
     receiver: Any? = null,
+    schemaCtx: SchemaBuilderContext,
     scope: CoroutineScope = GlobalScope,
-    context: CoroutineContext = EmptyCoroutineContext,
+    corCtx: CoroutineContext = EmptyCoroutineContext,
 ): DataFetcher<Any> {
     return if (this.isSuspend) when (returnType.classifier) {
         Map::class -> DataFetcher { env ->
             val args = args.resolve(env)
-            scope.future(context) {
+            scope.future(corCtx) {
                 (this@fetcher as KFunction<Map<String, Any>>).callSuspend(
                     env.getSource() ?: receiver,
                     *args
@@ -41,7 +43,7 @@ fun KFunction<*>.fetcher(
         Deferred::class -> if (returnType.unwrap().classifier == Map::class)
             DataFetcher { env ->
                 val args = args.resolve(env)
-                scope.future(context) {
+                scope.future(corCtx) {
                     (this@fetcher as KFunction<Deferred<Map<Any, Any>>>).callSuspend(
                         env.getSource() ?: receiver,
                         *args
@@ -51,33 +53,52 @@ fun KFunction<*>.fetcher(
         else
             DataFetcher { env ->
                 val args = args.resolve(env)
-                scope.future(context) {
+                scope.future(corCtx) {
                     (this@fetcher as KFunction<Deferred<Any>>).callSuspend(env.getSource() ?: receiver, *args)
                         .await()
                 }
             }
 
-        Flow::class -> if (returnType.unwrap().classifier == Map::class)
-            DataFetcher { env ->
-                val args = args.resolve(env)
-                scope.future(context) {
-                    (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
-                        .asPublisher(context)
+        Flow::class -> if (schemaCtx.convertFlowToPublisher)
+            if (returnType.unwrap().classifier == Map::class)
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    scope.future(corCtx) {
+                        (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
+                            .map { (it as Map<Any, Any?>).entries }
+                            .asPublisher(coroutineContext)
+                    }
                 }
-            }
+            else
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    scope.future(corCtx) {
+                        (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
+                            .asPublisher(coroutineContext)
+                    }
+                }
         else
-            DataFetcher { env ->
-                val args = args.resolve(env)
-                scope.future(context) {
-                    (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
-                        .asPublisher(context)
+            if (returnType.unwrap().classifier == Map::class)
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    scope.future(corCtx) {
+                        (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
+                            .map { (it as Map<Any, Any?>).entries }
+                    }
                 }
-            }
+            else
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    scope.future(corCtx) {
+                        (this@fetcher as KFunction<Flow<Any>>).callSuspend(env.getSource() ?: receiver, *args)
+                    }
+                }
+
 
         else ->
             DataFetcher { env ->
                 val args = args.resolve(env)
-                scope.future(context) {
+                scope.future(corCtx) {
                     this@fetcher.callSuspend(env.getSource() ?: receiver, *args)
                 }
             }
@@ -102,18 +123,33 @@ fun KFunction<*>.fetcher(
                 (this as KFunction<Deferred<Any>>).call(env.getSource() ?: receiver, *args).asCompletableFuture()
             }
 
-        Flow::class -> if (returnType.unwrap().classifier == Map::class)
-            DataFetcher { env ->
-                val args = args.resolve(env)
-                (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
-                    .asPublisher(context)
-            }
+        Flow::class -> if (schemaCtx.convertFlowToPublisher)
+            if (returnType.unwrap().classifier == Map::class)
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
+                        .map { (it as Map<Any, Any?>).entries }
+                        .asPublisher(corCtx)
+                }
+            else
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
+                        .asPublisher(corCtx)
+                }
         else
-            DataFetcher { env ->
-                val args = args.resolve(env)
-                (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
-                    .asPublisher(context)
-            }
+            if (returnType.unwrap().classifier == Map::class)
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
+                        .map { (it as Map<Any, Any?>).entries }
+                }
+            else
+                DataFetcher { env ->
+                    val args = args.resolve(env)
+                    (this@fetcher as KFunction<Flow<Any>>).call(env.getSource() ?: receiver, *args)
+                }
+
 
         else ->
             DataFetcher { env ->

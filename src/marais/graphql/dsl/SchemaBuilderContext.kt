@@ -22,6 +22,8 @@ class SchemaBuilderContext(
 
     internal val logDerive = LogManager.getLogger("${log.name}.derive")
 
+    internal var convertFlowToPublisher = true
+
     internal fun getInputType(kclass: KClass<*>) = inputs.find { it.kclass == kclass }
 
     internal fun isInputType(kclass: KClass<*>) = getInputType(kclass) != null
