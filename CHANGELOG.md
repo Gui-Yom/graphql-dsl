@@ -7,7 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.0...HEAD
+
+## [0.8.0] - 2021-08-06
+
+[0.8.0]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.7.1...HEAD
 
 ### Added
 
