@@ -151,7 +151,7 @@ repositories {
     }
 }
 dependencies {
-    implementation("marais.graphql:graphql-dsl:0.8.0")
+    implementation("marais.graphql:graphql-dsl:0.8.1")
 }
 ```
 
@@ -200,6 +200,6 @@ repositories {
     }
 }
 dependencies {
-    testImplementation("marais.graphql:graphql-dsl-test:0.8.0")
+    testImplementation("marais.graphql:graphql-dsl-test:0.8.1")
 }
 ```
