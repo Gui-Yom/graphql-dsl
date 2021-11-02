@@ -7,7 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.2...HEAD
+
+## [0.8.2] - 2021-11-02
+
+[0.8.2]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.1...v0.8.2
+
+### Changed
 
 - Updated dependencies (kotlin 1.5.31, graphql-java 17.3)
 - Exclude non-public properties and functions from `derive`
