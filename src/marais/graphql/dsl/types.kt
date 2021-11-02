@@ -1,12 +1,9 @@
 package marais.graphql.dsl
 
 import graphql.schema.StaticDataFetcher
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KProperty1
+import kotlin.reflect.*
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.typeOf
 
 /**
  * Base builder for every object type
@@ -102,9 +99,7 @@ sealed class BaseTypeSpec<R : Any>(
         propFilter: List<KProperty1<R, *>>,
     ) {
         kclass.memberProperties.asSequence().filter {
-            it.name !in nameFilter
-        }.filter {
-            it !in propFilter
+            it.name !in nameFilter && it !in propFilter && it.visibility == KVisibility.PUBLIC
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
             fields += PropertyFieldSpec(it, it.name, null, instance, context)
@@ -116,9 +111,7 @@ sealed class BaseTypeSpec<R : Any>(
         funFilter: List<KFunction<*>>,
     ) {
         kclass.memberFunctions.asSequence().filter {
-            it.name.isValidFunctionForDerive() && it.name !in nameFilter
-        }.filter {
-            it !in funFilter
+            it.name.isValidFunctionForDerive() && it.name !in nameFilter && it !in funFilter && it.visibility == KVisibility.PUBLIC
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
             fields += FunctionFieldSpec(it, it.name, null, instance, context)
@@ -126,7 +119,7 @@ sealed class BaseTypeSpec<R : Any>(
     }
 
     /**
-     * Include fields based on properties and functions present in the backing class.
+     * Include fields based on public properties and functions present in the backing class.
      *
      * @param exclusionsBuilder allows you to configure exclusion rules, defaults to a set of known functions.
      */
@@ -137,7 +130,7 @@ sealed class BaseTypeSpec<R : Any>(
     }
 
     /**
-     * Include fields based on properties present in the backing class.
+     * Include fields based on public properties present in the backing class.
      *
      * @param exclusionsBuilder allows you to configure exclusion rules, defaults to no exclusions.
      */
@@ -148,7 +141,7 @@ sealed class BaseTypeSpec<R : Any>(
     }
 
     /**
-     * Include fields based on functions present in the backing class.
+     * Include fields based on public functions present in the backing class.
      *
      * @param exclusionsBuilder allows you to configure exclusion rules, defaults to a set of known functions.
      */
