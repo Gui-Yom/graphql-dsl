@@ -193,6 +193,16 @@ sealed class BaseTypeSpec<R : Any>(
     }
 
     /**
+     * Declare a custom field named [KProperty.name].
+     *
+     * @param fetcher the code executed behind this field
+     */
+    @SchemaDsl
+    inline operator fun <reified O> KProperty<*>.invoke(noinline fetcher: suspend R.() -> O) {
+        field(this.name, fetcher)
+    }
+
+    /**
      * Declare a custom field.
      *
      * @param name the name of the field
@@ -204,6 +214,16 @@ sealed class BaseTypeSpec<R : Any>(
         fetcher: suspend R.(A) -> O
     ) {
         fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 1, context, instance)
+    }
+
+    /**
+     * Declare a custom field named [KProperty.name].
+     *
+     * @param fetcher the code executed behind this field
+     */
+    @SchemaDsl
+    operator fun <O, A> KProperty<*>.invoke(fetcher: suspend R.(A) -> O) {
+        field(this.name, fetcher)
     }
 
     /**
