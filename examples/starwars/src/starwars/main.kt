@@ -16,9 +16,29 @@ fun main(args: Array<String>) {
         }
 
         type<Droid> {
+
             inter<Character>()
 
             derive()
+
+            //Any string custom field
+            "friends" { ->
+                mutableListOf("C-3PO", "R2D2")
+            }
+
+            "name" { ->
+                "BB-8"
+            }
+
+            //Custom field resolver based on the existing properties
+            Droid::friends { ->
+                mutableListOf("C-3PO", "R2D2")
+            }
+
+            Droid::name { ->
+                "BB-8"
+            }
+
         }
 
         query(Query)
