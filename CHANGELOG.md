@@ -9,6 +9,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 [Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.2...HEAD
 
+### Changed
+
+- Updated Kotlin and dependencies :
+  - kotlin 1.5.31 -> 1.6.21
+  - kotlinx.coroutines 1.5 -> 1.6.1
+  - log4j 2.14 -> 2.17
+  - graphql-java 17.3 -> 18.0
+  - junit 5.7 -> 5.8
+
 ## [0.8.2] - 2021-11-02
 
 [0.8.2]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.1...v0.8.2
