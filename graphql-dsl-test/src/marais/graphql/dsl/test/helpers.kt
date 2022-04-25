@@ -1,5 +1,6 @@
 package marais.graphql.dsl.test
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
@@ -51,10 +52,21 @@ class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
      * Executes [query] in the GraphQL engine and call [block] with the [ExecutionResult] as receiver.
      *
      * @param query the GraphQL query to execute
+     * @param builder optional execution input builder
      * @param block the code to run
      */
-    fun withQuery(query: String, block: ExecutionResult.() -> Unit) {
-        block(graphQL.execute(query))
+    fun withQuery(query: String, builder: ExecutionInput.Builder.() -> Unit = {}, block: ExecutionResult.() -> Unit) {
+        block(graphQL.execute(ExecutionInput.newExecutionInput().apply(builder).query(query).build()))
+    }
+
+    /**
+     * Executes the query built with [builder] in the GraphQL engine and call [block] with the [ExecutionResult] as receiver.
+     *
+     * @param builder execution input builder
+     * @param block the code to run
+     */
+    fun withQuery(builder: ExecutionInput.Builder.() -> Unit, block: ExecutionResult.() -> Unit) {
+        block(graphQL.execute(ExecutionInput.newExecutionInput().apply(builder).build()))
     }
 
     /**
@@ -65,6 +77,33 @@ class SchemaTestContext(val graphQL: GraphQL, val schema: GraphQLSchema) {
      */
     fun <T> assertQueryReturns(query: String, expected: T?) {
         withQuery(query) {
+            assertTrue(errors.isEmpty(), errors.toString())
+            assertEquals(expected, getData())
+        }
+    }
+
+    /**
+     * Executes [query] in the GraphQL engine, check that no errors are returned and compare the results with [expected].
+     *
+     * @param query the GraphQL query to run
+     * @param builder optional execution input builder
+     * @param expected the expected result
+     */
+    fun <T> assertQueryReturns(query: String, builder: ExecutionInput.Builder.() -> Unit = {}, expected: T?) {
+        withQuery(query, builder) {
+            assertTrue(errors.isEmpty(), errors.toString())
+            assertEquals(expected, getData())
+        }
+    }
+
+    /**
+     * Executes the query built with [builder] in the GraphQL engine, check that no errors are returned and compare the results with [expected].
+     *
+     * @param builder execution input builder
+     * @param expected the expected result
+     */
+    fun <T> assertQueryReturns(builder: ExecutionInput.Builder.() -> Unit, expected: T?) {
+        withQuery(builder) {
             assertTrue(errors.isEmpty(), errors.toString())
             assertEquals(expected, getData())
         }

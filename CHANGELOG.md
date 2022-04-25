@@ -19,6 +19,8 @@ query {
   "test" { arg: Int -> 42 * a }
 }
 ```
+- Warn of unused description elements (overwritten description, unused arguments)
+- Allow injecting GraphQLContext object directly
 
 ### Changed
 
@@ -28,6 +30,12 @@ query {
   - log4j 2.14 -> 2.17
   - graphql-java 17.3 -> 18.0
   - junit 5.7 -> 5.8
+
+### graphql-dsl-test
+
+#### Added
+
+- Allow customizing the ExecutionInput
 
 ## [0.8.2] - 2021-11-02
 

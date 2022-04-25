@@ -1,5 +1,6 @@
 package marais.graphql.dsl
 
+import graphql.GraphQLContext
 import graphql.schema.DataFetchingEnvironment
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
@@ -17,6 +18,7 @@ internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument 
 internal fun createArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext): Argument {
     return when (type.kclass) {
         DataFetchingEnvironment::class -> EnvArgument(name)
+        GraphQLContext::class -> ContextArgument(name)
         List::class -> ListArgument(name, type, desc, context)
         in context.idCoercers -> IdArgument(name, type, desc, context.idCoercers[type.kclass]!!)
         else -> when {
@@ -30,7 +32,7 @@ internal fun createArgument(name: String, type: KType, desc: String?, context: S
 sealed class Argument(val name: String, val type: KType, val description: String?) {
 
     internal val isShownInSchema: Boolean
-        get() = this !is EnvArgument && this !is StaticArgument
+        get() = this !is EnvArgument && this !is ContextArgument && this !is StaticArgument
 
     /**
      * Resolve this argument directly from the environment.
@@ -67,7 +69,9 @@ class StaticArgument(private val value: Any?) : Argument("static", typeOf<Any>()
     }
 }
 
-// For injecting DataFetchingEnvironment instance
+/**
+ * For injecting DataFetchingEnvironment instance
+ */
 private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvironment>(), null) {
 
     override fun resolve(env: DataFetchingEnvironment): DataFetchingEnvironment = env
@@ -75,7 +79,19 @@ private class EnvArgument(name: String) : Argument(name, typeOf<DataFetchingEnvi
     override fun resolve(input: Any?): Any = throw UnsupportedOperationException("No nested env")
 }
 
-// For input objects
+/**
+ * For injecting GraphQLContext instance
+ */
+private class ContextArgument(name: String) : Argument(name, typeOf<GraphQLContext>(), null) {
+
+    override fun resolve(env: DataFetchingEnvironment): GraphQLContext = env.graphQlContext
+
+    override fun resolve(input: Any?): Any = throw UnsupportedOperationException("No nested env")
+}
+
+/**
+ * For input objects
+ */
 private class InputObjectArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext) :
     Argument(name, type, desc) {
 
@@ -100,13 +116,17 @@ private class InputObjectArgument(name: String, type: KType, desc: String?, cont
     }
 }
 
-// For scalars
+/**
+ * For scalars
+ */
 private class NormalArgument(name: String, type: KType, desc: String?) : Argument(name, type, desc) {
 
     override fun resolve(input: Any?): Any? = input
 }
 
-// For enums
+/**
+ * For enums
+ */
 private class EnumArgument(name: String, type: KType, desc: String?) : Argument(name, type, desc) {
 
     private val constants = type.kclass.java.enumConstants as Array<Enum<*>>
@@ -114,7 +134,9 @@ private class EnumArgument(name: String, type: KType, desc: String?) : Argument(
     override fun resolve(input: Any?): Any? = constants.find { it.name == input }
 }
 
-// For List
+/**
+ * For lists
+ */
 private class ListArgument(name: String, type: KType, desc: String?, context: SchemaBuilderContext) :
     Argument(name, type, desc) {
 

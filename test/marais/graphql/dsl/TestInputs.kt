@@ -1,5 +1,7 @@
 package marais.graphql.dsl
 
+import graphql.GraphQLContext
+import graphql.schema.DataFetchingEnvironment
 import marais.graphql.dsl.test.withSchema
 import kotlin.test.Test
 
@@ -63,6 +65,24 @@ class TestInputs {
                 "test" to "hello world"
             )
         }
+    }
+
+    @Test
+    fun `DataFetchingEnvironment input`() = withSchema({
+        query {
+            "test" { env: DataFetchingEnvironment -> env.field.name }
+        }
+    }) {
+        """query { test }""" shouldReturns mapOf("test" to "test")
+    }
+
+    @Test
+    fun `GraphQLContext input`() = withSchema({
+        query {
+            "test" { ctx: GraphQLContext -> ctx.get<String>("userId") }
+        }
+    }) {
+        assertQueryReturns("query { test }", { graphQLContext(mapOf("userId" to "69420")) }, mapOf("test" to "69420"))
     }
 
     /*

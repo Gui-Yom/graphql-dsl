@@ -121,9 +121,8 @@ An example project showcasing the GraphQL introduction' Star Wars schema is avai
 - Schema element descriptions through annotations or directly in the dsl
 - Map type support through automatic conversion to List<MapEntry>
 
-## Planned features
+## Considered features
 
-- Support injecting GraphQLContext field parameter
 - Non suspend custom fields
 - Support primitive arrays and object arrays
 - Field argument default value (need annotations)
