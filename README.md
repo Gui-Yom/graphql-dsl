@@ -126,7 +126,6 @@ An example project showcasing the GraphQL introduction' Star Wars schema is avai
 - Support injecting GraphQLContext field parameter
 - Non suspend custom fields
 - Support primitive arrays and object arrays
-- Support list of input objects
 - Field argument default value (need annotations)
 - Support generics types (throw exception on *-projection, type arguments must be declared in the schema,
   monomorphisation)
@@ -151,7 +150,7 @@ repositories {
     }
 }
 dependencies {
-    implementation("marais.graphql:graphql-dsl:0.8.1")
+    implementation("marais.graphql:graphql-dsl:0.9.0")
 }
 ```
 
@@ -200,6 +199,6 @@ repositories {
     }
 }
 dependencies {
-    testImplementation("marais.graphql:graphql-dsl-test:0.8.1")
+    testImplementation("marais.graphql:graphql-dsl-test:0.9.0")
 }
 ```

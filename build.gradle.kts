@@ -68,9 +68,9 @@ tasks {
         kotlinOptions {
             jvmTarget = "17"
             freeCompilerArgs = listOf(
-                "-Xopt-in=kotlin.ExperimentalStdlibApi",
-                "-Xopt-in=kotlin.reflect.jvm.ExperimentalReflectionOnLambdas",
-                "-Xopt-in=kotlinx.coroutines.DelicateCoroutinesApi"
+                "-opt-in=kotlin.ExperimentalStdlibApi",
+                "-opt-in=kotlin.reflect.jvm.ExperimentalReflectionOnLambdas",
+                "-opt-in=kotlinx.coroutines.DelicateCoroutinesApi"
             )
         }
     }

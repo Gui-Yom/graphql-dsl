@@ -65,6 +65,7 @@ class TestInputs {
         }
     }
 
+    /*
     @Test
     fun `primitive array input`() = withSchema({
         query {
@@ -86,5 +87,5 @@ class TestInputs {
         }
     }) {
         """query { test(values: ["hello", "world"]) }""" shouldReturns mapOf("test" to "hello world")
-    }
+    }*/
 }
