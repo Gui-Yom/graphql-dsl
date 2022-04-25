@@ -18,8 +18,14 @@ internal interface DescriptionDsl {
         val trimmed = this.trimIndent()
         val result = argDescPattern.matchEntire(trimmed)
         if (result != null) {
+            if (result.groupValues[1] in context.nextArgDesc) {
+                context.log.warn("Overwritten description element for argument '${result.groupValues[1]}' (probably unintentional)")
+            }
             context.nextArgDesc[result.groupValues[1]] = result.groupValues[2]
         } else {
+            if (context.nextDesc != null) {
+                context.log.warn("Overwritten description element (probably unintentional), old desc: ${context.nextDesc}")
+            }
             context.nextDesc = trimmed
         }
     }

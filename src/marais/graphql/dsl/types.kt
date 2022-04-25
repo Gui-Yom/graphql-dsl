@@ -70,6 +70,7 @@ sealed class BaseTypeSpec<R : Any>(
         if (name in fields)
             throw Exception("A field with this name is already included")
         fields += FunctionFieldSpec(func, name, instance, context)
+        context.checkRemainingArgDesc()
     }
 
     /**

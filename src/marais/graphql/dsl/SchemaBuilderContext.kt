@@ -37,6 +37,16 @@ class SchemaBuilderContext(
         return desc
     }
 
+    @PublishedApi
+    internal fun checkRemainingArgDesc() {
+        if (nextArgDesc.isNotEmpty()) {
+            for (e in nextArgDesc) {
+                log.warn("Unused argument description (Maybe a typo ?) : ${e.key}")
+            }
+            nextArgDesc.clear()
+        }
+    }
+
     internal val logDerive = LogManager.getLogger("${log.name}.derive")
 
     internal var convertFlowToPublisher = true

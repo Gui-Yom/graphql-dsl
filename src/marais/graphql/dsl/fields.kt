@@ -49,6 +49,7 @@ internal class SuspendLambdaFieldSpec(
         reflected.valueParameters.mapTo(arguments) {
             it.createArgument(context)
         }
+        context.checkRemainingArgDesc()
     }
 
     override val dataFetcher: DataFetcher<Any?> =
@@ -82,6 +83,7 @@ internal class FunctionFieldSpec<R>(
         for (it in func.valueParameters) {
             arguments += it.createArgument(context)
         }
+        context.checkRemainingArgDesc()
     }
 
     override val dataFetcher: DataFetcher<Any?> = func.fetcher(func.returnType, arguments, receiver, context)
