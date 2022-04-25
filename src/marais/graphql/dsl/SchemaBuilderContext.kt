@@ -20,6 +20,23 @@ class SchemaBuilderContext(
     val interfaces: List<InterfaceSpec<*>>
 ) {
 
+    internal var nextDesc: String? = null
+    internal val nextArgDesc: MutableMap<String, String> = HashMap()
+
+    @PublishedApi
+    internal fun takeDesc(): String? {
+        val desc = nextDesc
+        nextDesc = null
+        return desc
+    }
+
+    @PublishedApi
+    internal fun takeArgDesc(arg: String): String? {
+        val desc = nextArgDesc[arg]
+        nextArgDesc.remove(arg)
+        return desc
+    }
+
     internal val logDerive = LogManager.getLogger("${log.name}.derive")
 
     internal var convertFlowToPublisher = true

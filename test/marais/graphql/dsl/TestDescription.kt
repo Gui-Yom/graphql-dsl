@@ -49,6 +49,33 @@ class TestDescription {
     }
 
     @Test
+    fun `argument description`() = withSchema({
+        query {
+            !"On field"
+            !"arg: On argument"
+            "test" { arg: Int -> 42 * arg }
+        }
+    }) {
+        assertEquals("On field", schema.queryType.getFieldDefinition("test").description)
+        assertEquals("On argument", schema.queryType.getFieldDefinition("test").getArgument("arg").description)
+    }
+
+    @Test
+    fun `argument multiline description`() = withSchema({
+        query {
+            !"On field"
+            !"""
+                arg: This is a
+                multiline description
+            """
+            "test" { arg: Int -> 42 * arg }
+        }
+    }) {
+        assertEquals("On field", schema.queryType.getFieldDefinition("test").description)
+        assertEquals("This is a\nmultiline description", schema.queryType.getFieldDefinition("test").getArgument("arg").description)
+    }
+
+    @Test
     fun `priority to dsl description`() = withSchema({
 
         @GraphQLDescription("Annotation")

@@ -35,13 +35,12 @@ class CustomFieldSpec(
 
 internal class SuspendLambdaFieldSpec(
     name: String,
-    description: String?,
     lambda: Function<*>,
     arity: Int,
     context: SchemaBuilderContext,
     receiver: Any? = null,
     reflected: KFunction<*> = lambda.reflect()!!
-) : FieldSpec(name, description) {
+) : FieldSpec(name, context.takeDesc()) {
 
     override val outputType: KType = reflected.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf(StaticArgument(lambda))
@@ -59,10 +58,9 @@ internal class SuspendLambdaFieldSpec(
 internal class PropertyFieldSpec<R>(
     property: KProperty1<R, Any?>,
     name: String,
-    description: String?,
     receiver: R? = null,
     context: SchemaBuilderContext
-) : FieldSpec(name, description ?: property.extractDesc()) {
+) : FieldSpec(name, context.takeDesc() ?: property.extractDesc()) {
 
     override val dataFetcher: DataFetcher<Any?> =
         property.getter.fetcher(property.returnType, emptyList(), receiver, context)
@@ -73,10 +71,9 @@ internal class PropertyFieldSpec<R>(
 internal class FunctionFieldSpec<R>(
     func: KFunction<Any?>,
     name: String,
-    description: String?,
     receiver: R?,
     context: SchemaBuilderContext
-) : FieldSpec(name, description ?: func.extractDesc()) {
+) : FieldSpec(name, context.takeDesc() ?: func.extractDesc()) {
 
     override val outputType: KType = func.returnType.unwrapAsyncType()
     override val arguments: MutableList<Argument> = mutableListOf()

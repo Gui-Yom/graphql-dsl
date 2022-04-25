@@ -15,7 +15,7 @@ annotation class SchemaDsl
  * Holds the root DSL.
  */
 @SchemaDsl
-class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
+class SchemaSpec internal constructor(log: Logger) : DescriptionDsl {
 
     val idCoercers = mutableMapOf<KClass<*>, IdCoercer<*>>()
     val scalars = mutableListOf<ScalarSpec>()
@@ -34,10 +34,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
     var mutation: OperationSpec<*>? = null
     var subscription: OperationSpec<*>? = null
 
-    // For the DescriptionPublisher implementation
-    override var nextDesc: String? = null
-
-    val context = SchemaBuilderContext(log, idCoercers, inputs, interfaces)
+    override val context = SchemaBuilderContext(log, idCoercers, inputs, interfaces)
 
     /**
      * By default, when generating fetchers for your fields, [kotlinx.coroutines.flow.Flow] will be converted to
@@ -66,7 +63,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLScalarType.Builder.() -> Unit = {}
     ) {
-        scalars += ScalarSpec(T::class, name, coercing, takeDesc(), builder)
+        scalars += ScalarSpec(T::class, name, coercing, context.takeDesc(), builder)
     }
 
     /**
@@ -95,7 +92,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLEnumType.Builder.() -> Unit = {}
     ) {
-        enums += EnumSpec(T::class, name, takeDesc(), builder)
+        enums += EnumSpec(T::class, name, context.takeDesc(), builder)
     }
 
     /**
@@ -110,7 +107,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
         name: String = T::class.deriveName(),
         noinline builder: GraphQLInputObjectType.Builder.() -> Unit = {}
     ) {
-        inputs += InputSpec(T::class, name, takeDesc(), builder)
+        inputs += InputSpec(T::class, name, context.takeDesc(), builder)
     }
 
     /**
@@ -125,7 +122,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
         name: String = T::class.deriveName(),
         configure: InterfaceSpec<T>.() -> Unit = { derive() }
     ) {
-        interfaces += InterfaceSpec(T::class, name, takeDesc(), context).apply(configure)
+        interfaces += InterfaceSpec(T::class, name, context).apply(configure)
     }
 
     /**
@@ -139,7 +136,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
         name: String = T::class.deriveName(),
         configure: TypeSpec<T>.() -> Unit = { derive(); deriveInterfaces() }
     ) {
-        types += TypeSpec(T::class, name, takeDesc(), context).apply(configure)
+        types += TypeSpec(T::class, name, context).apply(configure)
     }
 
     /**
@@ -149,7 +146,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
      */
     @SchemaDsl
     inline fun <T : Any> query(query: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
-        takeDesc() // Consume description
+        context.takeDesc() // Consume description
         this.query = OperationSpec("Query", query, context).apply(configure)
     }
 
@@ -170,7 +167,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
      */
     @SchemaDsl
     inline fun <T : Any> mutation(mutation: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
-        takeDesc() // Consume description
+        context.takeDesc() // Consume description
         this.mutation = OperationSpec("Mutation", mutation, context).apply(configure)
     }
 
@@ -191,7 +188,7 @@ class SchemaSpec internal constructor(log: Logger) : DescriptionHolder {
      */
     @SchemaDsl
     inline fun <T : Any> subscription(subscription: T, configure: OperationSpec<T>.() -> Unit = { derive() }) {
-        takeDesc() // Consume description
+        context.takeDesc() // Consume description
         this.subscription = OperationSpec("Subscription", subscription, context).apply(configure)
     }
 

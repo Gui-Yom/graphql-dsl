@@ -9,7 +9,7 @@ internal fun KParameter.createArgument(context: SchemaBuilderContext): Argument 
     return createArgument(
         name ?: throw Exception("Parameter $this must have a name (no _ allowed)"),
         type,
-        extractDesc(),
+        context.takeArgDesc(name!!) ?: extractDesc(),
         context
     )
 }

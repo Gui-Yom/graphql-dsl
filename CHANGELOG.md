@@ -9,6 +9,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 [Unreleased]: https://github.com/Gui-Yom/graphql-dsl/compare/v0.8.2...HEAD
 
+### Added
+
+- Set description on arguments right from the DSL without any annotations :
+```kotlin
+query {
+  !"On field"
+  !"arg: On argument"
+  "test" { arg: Int -> 42 * a }
+}
+```
+
 ### Changed
 
 - Updated Kotlin and dependencies :

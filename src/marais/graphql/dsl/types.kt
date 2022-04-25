@@ -14,15 +14,10 @@ sealed class BaseTypeSpec<R : Any>(
     @PublishedApi
     internal val instance: R?,
     val name: String,
-    description: String?,
-    @PublishedApi
-    internal val context: SchemaBuilderContext
-) : DescriptionHolder {
-    val description: String? = description ?: kclass.extractDesc()
+    final override val context: SchemaBuilderContext
+) : DescriptionDsl {
+    val description: String? = context.takeDesc() ?: kclass.extractDesc()
     val fields: MutableList<FieldSpec> = mutableListOf()
-
-    // For the DescriptionHolder implementation
-    override var nextDesc: String? = null
 
     /**
      * Include a field from a static value. No computations, a plain static value that won't ever change.
@@ -33,7 +28,7 @@ sealed class BaseTypeSpec<R : Any>(
      */
     @SchemaDsl
     inline fun <reified T : Any> static(name: String, value: T) {
-        fields += CustomFieldSpec(name, takeDesc(), typeOf<T>(), emptyList(), StaticDataFetcher(value))
+        fields += CustomFieldSpec(name, context.takeDesc(), typeOf<T>(), emptyList(), StaticDataFetcher(value))
     }
 
     /**
@@ -50,7 +45,7 @@ sealed class BaseTypeSpec<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += PropertyFieldSpec(property, name, takeDesc(), instance, context)
+        fields += PropertyFieldSpec(property, name, instance, context)
     }
 
     /**
@@ -74,7 +69,7 @@ sealed class BaseTypeSpec<R : Any>(
     ) {
         if (name in fields)
             throw Exception("A field with this name is already included")
-        fields += FunctionFieldSpec(func, name, takeDesc(), instance, context)
+        fields += FunctionFieldSpec(func, name, instance, context)
     }
 
     /**
@@ -102,7 +97,7 @@ sealed class BaseTypeSpec<R : Any>(
             it.name !in nameFilter && it !in propFilter && it.visibility == KVisibility.PUBLIC
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] property `${it.name}`: ${it.returnType}")
-            fields += PropertyFieldSpec(it, it.name, null, instance, context)
+            fields += PropertyFieldSpec(it, it.name, instance, context)
         }
     }
 
@@ -114,7 +109,7 @@ sealed class BaseTypeSpec<R : Any>(
             it.name.isValidFunctionForDerive() && it.name !in nameFilter && it !in funFilter && it.visibility == KVisibility.PUBLIC
         }.forEach {
             context.logDerive.debug("${name}[${kclass.qualifiedName}] function `${it.name}`: ${it.returnType}")
-            fields += FunctionFieldSpec(it, it.name, null, instance, context)
+            fields += FunctionFieldSpec(it, it.name, instance, context)
         }
     }
 
@@ -167,19 +162,11 @@ sealed class BaseTypeSpec<R : Any>(
      * @param fetcher the code executed behind this field
      */
     @SchemaDsl
-    inline fun <reified O> field(
+    fun <O> field(
         name: String,
-        noinline fetcher: suspend R.() -> O
+        fetcher: suspend R.() -> O
     ) {
-        val returnType = typeOf<O>()
-        fields += CustomFieldSpec(
-            name,
-            takeDesc(),
-            returnType.unwrapAsyncType(),
-            // I do not pass the StaticArgument here since it's not shown in the schema anyway
-            emptyList(),
-            Lambdas.indirectCallSuspend(0).fetcher(returnType, listOf(StaticArgument(fetcher)), instance, context)
-        )
+        fields += SuspendLambdaFieldSpec(name, fetcher, 0, context, instance)
     }
 
     /**
@@ -188,7 +175,7 @@ sealed class BaseTypeSpec<R : Any>(
      * @param fetcher the code executed behind this field
      */
     @SchemaDsl
-    inline operator fun <reified O> String.invoke(noinline fetcher: suspend R.() -> O) {
+    operator fun <O> String.invoke(fetcher: suspend R.() -> O) {
         field(this, fetcher)
     }
 
@@ -203,7 +190,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 1, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 1, context, instance)
     }
 
     /**
@@ -227,7 +214,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 2, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 2, context, instance)
     }
 
     /**
@@ -251,7 +238,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 3, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 3, context, instance)
     }
 
     /**
@@ -275,7 +262,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 4, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 4, context, instance)
     }
 
     /**
@@ -299,7 +286,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D, E) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 5, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 5, context, instance)
     }
 
     /**
@@ -323,7 +310,7 @@ sealed class BaseTypeSpec<R : Any>(
         name: String,
         fetcher: suspend R.(A, B, C, D, E, F) -> O
     ) {
-        fields += SuspendLambdaFieldSpec(name, takeDesc(), fetcher, 6, context, instance)
+        fields += SuspendLambdaFieldSpec(name, fetcher, 6, context, instance)
     }
 
     /**
@@ -343,9 +330,8 @@ sealed class BaseTypeSpec<R : Any>(
 class InterfaceSpec<R : Any>(
     kclass: KClass<R>,
     name: String,
-    description: String?,
     context: SchemaBuilderContext
-) : BaseTypeSpec<R>(kclass, null, name, description, context) {
+) : BaseTypeSpec<R>(kclass, null, name, context) {
 
     init {
         require(kclass.isValidClassForInterface())
@@ -358,9 +344,8 @@ class InterfaceSpec<R : Any>(
 class TypeSpec<R : Any>(
     kclass: KClass<R>,
     name: String,
-    description: String?,
     context: SchemaBuilderContext
-) : BaseTypeSpec<R>(kclass, null, name, description, context) {
+) : BaseTypeSpec<R>(kclass, null, name, context) {
 
     init {
         require(kclass.isValidClassForType())
@@ -396,7 +381,7 @@ class TypeSpec<R : Any>(
  * DSL for building a root object.
  */
 class OperationSpec<R : Any>(name: String, instance: R, context: SchemaBuilderContext) :
-    BaseTypeSpec<R>(instance::class as KClass<R>, instance, name, null, context) {
+    BaseTypeSpec<R>(instance::class as KClass<R>, instance, name, context) {
 
     init {
         require(kclass.isValidClassForType())
