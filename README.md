@@ -1,5 +1,8 @@
 # graphql-dsl
 
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/Gui-Yom/graphql-dsl?label=GitHub%20Packages)
+[![jitpack badge](https://jitpack.io/v/Gui-Yom/graphql-dsl.svg)](https://jitpack.io/#Gui-Yom/graphql-dsl)
+
 Build your GraphQL schema with a declarative Kotlin DSL.
 
 See also [graphql-dsl-test](#graphql-dsl-test) for some test utilities.
@@ -139,7 +142,7 @@ An example project showcasing the GraphQL introduction' Star Wars schema is avai
 
 ## Installation
 
-Artifacts are only published to Github Packages. With Gradle :
+Artifacts are published to Github Packages. With Gradle :
 
 ```kotlin
 repositories {
@@ -152,6 +155,22 @@ dependencies {
     implementation("marais.graphql:graphql-dsl:0.9.0")
 }
 ```
+
+Be aware that you need to be authenticated to the GitHub API to install packages. If you can't, use the jitpack
+repository as below :
+
+```kotlin
+repositories {
+    maven {
+        setUrl("https://jitpack.io")
+    }
+}
+dependencies {
+    implementation("com.github.Gui-Yom:graphql-dsl:v0.9.0")
+}
+```
+
+Those artifacts are built with jdk 17.
 
 # graphql-dsl-test
 
@@ -188,16 +207,5 @@ fun testMyQuery() = withSchema({
 
 ## Installation
 
-Artifacts are only published to Github Packages. With Gradle :
-
-```kotlin
-repositories {
-    maven {
-        setUrl("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
-        credentials { ... }
-    }
-}
-dependencies {
-    testImplementation("marais.graphql:graphql-dsl-test:0.9.0")
-}
-```
+`marais.graphql:graphql-dsl-test:0.9.0` with GitHub Packages or `com.github.Gui-Yom:graphql-dsl-test:v0.9.0` with
+Jitpack.
