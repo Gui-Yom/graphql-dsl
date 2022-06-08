@@ -1,11 +1,24 @@
 # graphql-dsl
 
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/Gui-Yom/graphql-dsl?label=GitHub%20Packages)
-[![jitpack badge](https://jitpack.io/v/Gui-Yom/graphql-dsl.svg)](https://jitpack.io/#Gui-Yom/graphql-dsl)
+![Maven Central](https://img.shields.io/maven-central/v/io.github.gui-yom/graphql-dsl)
 
 Build your GraphQL schema with a declarative Kotlin DSL.
 
-See also [graphql-dsl-test](#graphql-dsl-test) for some test utilities.
+See also [graphql-dsl-test](#graphql-dsl-test) to test your schema.
+
+## Installation
+
+Artifacts are published to Github Packages and Maven Central. With Gradle :
+
+```kotlin
+dependencies {
+    implementation("io.github.gui-yom:graphql-dsl:0.9.0")
+    testImplementation("io.github.gui-yom:graphql-dsl-test:0.9.0")
+}
+```
+
+Those artifacts are built with jdk 17.
 
 ## Example
 
@@ -140,38 +153,6 @@ An example project showcasing the GraphQL introduction' Star Wars schema is avai
 - Map everything at initialization so minimal work is done at runtime
 - Explore a way to verify and generate the schema at compile time through a compiler plugin or a gradle plugin
 
-## Installation
-
-Artifacts are published to Github Packages. With Gradle :
-
-```kotlin
-repositories {
-    maven {
-        setUrl("https://maven.pkg.github.com/Gui-Yom/graphql-dsl")
-        credentials { ... }
-    }
-}
-dependencies {
-    implementation("marais.graphql:graphql-dsl:0.9.0")
-}
-```
-
-Be aware that you need to be authenticated to the GitHub API to install packages. If you can't, use the jitpack
-repository as below :
-
-```kotlin
-repositories {
-    maven {
-        setUrl("https://jitpack.io")
-    }
-}
-dependencies {
-    implementation("com.github.Gui-Yom:graphql-dsl:v0.9.0")
-}
-```
-
-Those artifacts are built with jdk 17.
-
 # graphql-dsl-test
 
 The `graphql-dsl-test` artifact includes small utilities to make testing your schema code through graphql queries
@@ -204,8 +185,3 @@ fun testMyQuery() = withSchema({
         """query { test(a: 21) }""" shouldReturns mapOf("test" to 42)
     }
 ```
-
-## Installation
-
-`marais.graphql:graphql-dsl-test:0.9.0` with GitHub Packages or `com.github.Gui-Yom:graphql-dsl-test:v0.9.0` with
-Jitpack.

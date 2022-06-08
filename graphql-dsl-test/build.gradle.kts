@@ -52,6 +52,10 @@ tasks {
     }
 }
 
+val javadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+}
+
 fun RepositoryHandler.githubPackages(path: String) = maven {
     name = "GitHubPackages"
     url = uri("https://maven.pkg.github.com/$path")
@@ -64,24 +68,40 @@ fun RepositoryHandler.githubPackages(path: String) = maven {
 publishing {
     repositories {
         githubPackages("Gui-Yom/graphql-dsl")
+        maven {
+            name = "ossrh"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = project.findProperty("ossrhUsername") as String?
+                password = project.findProperty("ossrhPassword") as String?
+            }
+        }
     }
     publications {
         create<MavenPublication>("graphql-dsl-test") {
             from(project.components["java"])
+            artifact(javadocJar)
             pom {
                 name.set("graphql-dsl-test")
                 description.set("Test your GraphQL code with a code-first Kotlin DSL")
                 url.set("https://github.com/Gui-Yom/graphql-dsl")
-                developers {
-                    developer {
-                        id.set("Gui-Yom")
-                        name.set("Guillaume Anthouard")
-                    }
-                }
                 scm {
                     connection.set("scm:git:git://github.com/Gui-Yom/graphql-dsl.git")
                     developerConnection.set("scm:git:ssh://github.com/Gui-Yom/graphql-dsl.git")
                     url.set("https://github.com/Gui-Yom/graphql-dsl/")
+                }
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("Gui-Yom")
+                        name.set("Guillaume Anthouard")
+                        email.set("guillaume.anthouard@hotmail.fr")
+                    }
                 }
             }
         }
